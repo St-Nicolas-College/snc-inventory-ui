@@ -4,9 +4,31 @@
       <div class="d-flex align-center justify-center pb-3">
         <v-img src="/SNC-Logo.png" max-height="60" contain></v-img>
       </div>
+      <!-- <v-list-item>
+        <v-list-item-title>{{
+          userStore.user?.username || "Guest"
+        }}</v-list-item-title>
+        <v-list-item-subtitle class="text-xs text-gray-300">
+          {{ userStore.role }}
+        </v-list-item-subtitle>
+      </v-list-item> -->
       <v-divider></v-divider>
       <v-list density="compact" nav>
         <v-list-item
+          v-for="link in visibleLinks"
+          :key="link.title"
+          :to="link.to"
+          :prepend-icon="link.icon"
+          :title="link.title"
+          class="mb-2"
+          active-class="v-list-item--active-custom"
+        >
+          <!-- <v-list-item-icon>
+            <v-icon>{{ link.icon }}</v-icon>
+          </v-list-item-icon>
+          <v-list-item-title>{{ link.title }}</v-list-item-title> -->
+        </v-list-item>
+        <!-- <v-list-item
           prepend-icon="mdi-view-dashboard"
           title="Dashboard"
           value="dashboard"
@@ -65,7 +87,7 @@
           prepend-icon="mdi-file-chart"
           title="Reports"
           value="report"
-        ></v-list-item>
+        ></v-list-item> -->
 
         <!-- <v-divider class="my-4" v-if="drawer"></v-divider>
         <v-list-item v-else><v-icon>mdi-dots-horizontal</v-icon></v-list-item>
@@ -92,13 +114,13 @@
 
       <template v-slot:append v-if="drawer">
         <v-divider></v-divider>
-        <v-card class="mx-3  pa-2" color="transparent" flat>
+        <v-card class="mx-3 pa-2" color="transparent" flat>
           <v-row align="center" dense="compact">
             <v-col cols="auto">
               <v-avatar size="40" color="purple">
                 <!-- <v-img src="https://avatars.githubusercontent.com/u/9064066?v=4"></v-img> -->
                 <!-- <v-icon>mdi-account</v-icon> -->
-                 <span>{{ userInitial }}</span>
+                <span>{{ userInitial }}</span>
               </v-avatar>
             </v-col>
             <v-col class="py-0">
@@ -129,7 +151,7 @@
       </template>
     </v-navigation-drawer>
 
-    <v-app-bar app flat class="border-b">
+    <v-app-bar v-if="!hideAppBar" app flat class="border-b">
       <v-app-bar-nav-icon @click="drawer = !drawer"></v-app-bar-nav-icon>
       <v-toolbar-title class="d-none d-sm-flex align-center">
         <span class="font-weight-bold mr-2">SNC Inventory System</span>
@@ -208,14 +230,76 @@
 import { storeToRefs } from "pinia";
 import { useMyAuthStore } from "~/stores/auth";
 import { useTheme } from "vuetify"; // Import useTheme composable
+import { useDisplay } from "vuetify/lib/composables/display.mjs";
 const theme = useTheme();
 const router = useRouter();
 const { logUserOut } = useMyAuthStore();
 const { authenticated } = storeToRefs(useMyAuthStore());
 const { user } = storeToRefs(useMyAuthStore());
-const userInitial = ref(user.value.first_name.substring(0, 1)+user.value.last_name.substring(0, 1))
+const userStore = useMyAuthStore();
 
-const drawer = ref(true); // Initialize as true so it's open by default
+const userInitial = ref(
+  user.value.first_name.substring(0, 1) + user.value.last_name.substring(0, 1)
+);
+
+//const drawer = ref(true); // Initialize as true so it's open by default
+const drawer = useState('drawer', () => true)
+const display = useDisplay()
+const route = useRoute()
+
+const links = [
+  {
+    title: "Dashboard",
+    to: "/",
+    icon: "mdi-view-dashboard",
+    roles: ["custodian", "staff"],
+  },
+  {
+    title: "Inventory",
+    to: "/inventory",
+    icon: "mdi-archive",
+    roles: ["custodian", "staff"],
+  },
+  {
+    title: "Categories",
+    to: "/categories",
+    icon: "mdi-shape-outline",
+    roles: ["custodian"],
+  },
+  {
+    title: "Locations",
+    to: "/locations",
+    icon: "mdi-map-marker",
+    roles: ["custodian"],
+  },
+  {
+    title: "Departments",
+    to: "/departments",
+    icon: "mdi-domain",
+    roles: ["custodian"],
+  },
+  { title: "Suppliers", to: "/suppliers", icon: "mdi-truck", roles: ["custodian"] },
+  {
+    title: "Transactions",
+    to: "/transactions",
+    icon: "mdi-transfer",
+    roles: ["custodian", "staff"],
+  },
+  {
+    title: "Maintenance",
+    to: "/maintenance",
+    icon: "mdi-tools",
+    roles: ["custodian", "staff"],
+  },
+  {
+    title: "Reports",
+    to: "/reports",
+    icon: "mdi-file-chart",
+    roles: ["custodian"],
+  },
+  // { title: 'Settings', to: '/settings', icon: 'mdi-cog', roles: ['admin'] },
+  // { title: 'Login', to: '/login', icon: 'mdi-login', roles: ['guest'] }
+];
 
 const blogLinks = [
   ["Posts", "mdi-newspaper"],
@@ -233,6 +317,15 @@ function toggleTheme() {
   theme.global.name.value =
     theme.global.name.value === "light" ? "dark" : "light";
 }
+
+const visibleLinks = computed(() => {
+  return links.filter((link) => link.roles.includes(userStore.role));
+});
+
+
+// Hide AppBar
+const hideAppBar = computed(() => route.path === '/')
+
 </script>
 
 <style>

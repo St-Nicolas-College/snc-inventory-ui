@@ -1,5 +1,8 @@
 <template>
   <div>
+    <v-btn variant="plain" icon @click="drawer = !drawer">
+      <v-icon>mdi-menu</v-icon>
+    </v-btn>
     <h2 class="mb-4 font-bold text-xl">Dashboard</h2>
     <v-row dense>
       <v-col
@@ -26,12 +29,14 @@
 
 <script setup>
 definePageMeta({
-  requiredRole: 'staff',
+  requiredRole: ['custodian', 'staff'],
 
 });
 useHead({
   title: "Dashboard",
 });
+
+const drawer = useState('drawer') // shared state from layout
 
 const cards = ref([
   { title: 'Total Items', count: 0, icon: 'mdi-package-variant', color: 'indigo' },
@@ -42,25 +47,25 @@ const cards = ref([
   { title: 'Low Stock Items', count: 0, icon: 'mdi-alert-circle', color: 'red' }
 ])
 
-onMounted(async () => {
-  const [items, categories, departments, suppliers, maintenance] = await Promise.all([
-    $fetch('http://localhost:1337/api/items?pagination[limit]=0'),
-    $fetch('http://localhost:1337/api/categories?pagination[limit]=0'),
-    $fetch('http://localhost:1337/api/departments?pagination[limit]=0'),
-    $fetch('http://localhost:1337/api/suppliers?pagination[limit]=0'),
-    $fetch('http://localhost:1337/api/maintenance-logs?filters[status][$eq]=pending')
-  ])
+// onMounted(async () => {
+//   const [items, categories, departments, suppliers, maintenance] = await Promise.all([
+//     $fetch('http://localhost:1337/api/items?pagination[limit]=0'),
+//     $fetch('http://localhost:1337/api/categories?pagination[limit]=0'),
+//     $fetch('http://localhost:1337/api/departments?pagination[limit]=0'),
+//     $fetch('http://localhost:1337/api/suppliers?pagination[limit]=0'),
+//     $fetch('http://localhost:1337/api/maintenance-logs?filters[status][$eq]=pending')
+//   ])
 
-  cards.value[0].count = items.meta.pagination.total
-  cards.value[1].count = categories.meta.pagination.total
-  cards.value[2].count = departments.meta.pagination.total
-  cards.value[3].count = suppliers.meta.pagination.total
-  cards.value[4].count = maintenance.data.length
+//   cards.value[0].count = items.meta.pagination.total
+//   cards.value[1].count = categories.meta.pagination.total
+//   cards.value[2].count = departments.meta.pagination.total
+//   cards.value[3].count = suppliers.meta.pagination.total
+//   cards.value[4].count = maintenance.data.length
 
-  // Low stock (e.g., items with quantity < 5)
-  const lowStock = items.data.filter(item => item.attributes.quantity < 5)
-  cards.value[5].count = lowStock.length
-})
+//   // Low stock (e.g., items with quantity < 5)
+//   const lowStock = items.data.filter(item => item.attributes.quantity < 5)
+//   cards.value[5].count = lowStock.length
+// })
 </script>
 
 <style>
