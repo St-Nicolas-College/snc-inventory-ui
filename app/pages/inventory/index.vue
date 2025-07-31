@@ -12,7 +12,7 @@
         <v-text-field v-model="search" label="Search..." />
       </template>
 
-      <template #item.actions="{ item }">
+      <template v-slot:[`item.actions`]="{ item }">
         <NuxtLink :to="`/inventory/${item.documentId}`">
           <v-btn icon color="blue"><v-icon>mdi-pencil</v-icon></v-btn>
         </NuxtLink>
@@ -30,6 +30,11 @@ const token = useCookie('token')
 definePageMeta({
   middleware: 'role-check',
   allowedRoles: ['custodian', 'staff']
+})
+
+useHead({
+  title: 'Inventory',
+
 })
 
 const items = ref([])
