@@ -1,0 +1,21 @@
+/* Hide scrollbar for Chrome, Safari and Opera */
+::-webkit-scrollbar {
+  width: 3px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f1f1f1; 
+  border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #888;
+  border-radius: 10px;
+}
+
+/* Hide scrollbar for IE, Edge and Firefox */
+/* html {
+  scrollbar-width: none; 
+  -ms-overflow-style: none;
+} */

@@ -6,8 +6,10 @@
         <v-btn color="primary">Add Item</v-btn>
       </NuxtLink>
     </v-row> -->
+
+    <AppBreadcrumb :breadcrumbs="breadcrumbItems" theme="light" />
     <h2 class="mb-4">Inventory Items</h2>
-    <v-card>
+    <v-card elevation="0">
       <v-card-title class="d-flex align-center">
         <!-- <v-btn class="my-2 text-capitalize" prepend-icon="mdi-plus" color="primary" to="/inventory/create">Add
           Item</v-btn> -->
@@ -39,6 +41,8 @@
 
         <template v-slot:[`item.actions`]="{ item }">
           <!-- <v-btn size="small" class="mr-1" variant="tonal" color="blue" :to="`/inventory/${item.documentId}`"><v-icon>mdi-pencil</v-icon> Edit</v-btn> -->
+           <v-btn size="small" class="mr-1" variant="tonal"
+            @click="openEditDialog(item)"><v-icon>mdi-open-in-new</v-icon> View</v-btn>
           <v-btn size="small" class="mr-1" variant="tonal" color="blue"
             @click="openEditDialog(item)"><v-icon>mdi-pencil</v-icon> Edit</v-btn>
           <v-btn size="small" variant="tonal" color="red" @click="deleteItem(item.documentId)">
@@ -129,14 +133,21 @@ const search = ref('')
 const loading = ref(true)
 const header = [
   { title: 'Name', key: 'name' },
-  { title: 'Quantity', key: 'quantity' },
-  { title: 'Unit', key: 'unit' },
-  { title: 'Category', key: 'category' },
-  { title: 'Department', key: 'department' },
-  { title: 'Supplier', key: 'category' },
-  { title: 'Status', key: 'supplier' },
+  { title: 'Quantity', key: 'quantity', sortable: false },
+  { title: 'Unit', key: 'unit', sortable: false },
+  { title: 'Category', key: 'category', sortable: false },
+  { title: 'Department', key: 'department', sortable: false },
+  { title: 'Supplier', key: 'category', sortable: false },
+  { title: 'Status', key: 'supplier', sortable: false },
   { title: 'Actions', key: 'actions', align: 'end', sortable: false },
 ]
+
+const breadcrumbItems = [
+  { text: 'Home', to: '/', icon: 'mdi-home-outline' },
+  { text: 'Inventory' },
+
+]
+
 const editDialog = ref(false)
 const createDialog = ref(false)
 const selectedItemId = ref(null)
@@ -369,11 +380,12 @@ async function deleteItem(id) {
   border-right: thin solid rgba(var(--v-border-color), var(--v-border-opacity));
 }
 
-:deep() .v-table .v-table__wrapper>table>tbody>tr:nth-child(even) {
+/* :deep() .v-table .v-table__wrapper>table>tbody>tr:nth-child(even) {
   background-color: #f2f2f2;
-}
+} */
 
 :deep() .v-table .v-table__wrapper>table>tbody>tr:hover {
   background-color: #f2f2f2;
+  color: #000;
 }
 </style>
