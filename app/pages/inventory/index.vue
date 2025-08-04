@@ -42,7 +42,7 @@
         <template v-slot:[`item.actions`]="{ item }">
           <!-- <v-btn size="small" class="mr-1" variant="tonal" color="blue" :to="`/inventory/${item.documentId}`"><v-icon>mdi-pencil</v-icon> Edit</v-btn> -->
            <v-btn size="small" class="mr-1" variant="tonal"
-            @click="openEditDialog(item)"><v-icon>mdi-open-in-new</v-icon> View</v-btn>
+            :to="`/inventory/items/${item.documentId}`"><v-icon>mdi-open-in-new</v-icon> View</v-btn>
           <v-btn size="small" class="mr-1" variant="tonal" color="blue"
             @click="openEditDialog(item)"><v-icon>mdi-pencil</v-icon> Edit</v-btn>
           <v-btn size="small" variant="tonal" color="red" @click="deleteItem(item.documentId)">
@@ -137,8 +137,8 @@ const header = [
   { title: 'Unit', key: 'unit', sortable: false },
   { title: 'Category', key: 'category', sortable: false },
   { title: 'Department', key: 'department', sortable: false },
-  { title: 'Supplier', key: 'category', sortable: false },
-  { title: 'Status', key: 'supplier', sortable: false },
+  { title: 'Supplier', key: 'supplier', sortable: false },
+  { title: 'Status', key: 'item_status', sortable: false },
   { title: 'Actions', key: 'actions', align: 'end', sortable: false },
 ]
 
