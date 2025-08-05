@@ -6,8 +6,8 @@
         <v-btn color="primary">Add Item</v-btn>
       </NuxtLink>
     </v-row> -->
-
-    <AppBreadcrumb :breadcrumbs="breadcrumbItems" theme="light" />
+<AppBreadcrumb :breadcrumbs="breadcrumbItems" theme="light" class="mb-3" />
+    <!-- <AppBreadcrumb :breadcrumbs="breadcrumbItems" theme="light" /> -->
     <h2 class="mb-4">Inventory Items</h2>
     <v-card elevation="0">
       <v-card-title class="d-flex align-center">

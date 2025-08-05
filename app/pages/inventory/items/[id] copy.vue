@@ -50,14 +50,6 @@
           <v-divider></v-divider>
           <v-data-table :headers="headersTab" :items="filteredGroupedTags[group.value]" item-value="id"
             density="compact">
-            <template v-slot:[`item.tag_number`]="{ item }">
-              <span v-if="item.is_virtual" class="text-grey">—</span>
-              <span v-else>{{ item.tag_number }}</span>
-            </template>
-
-            <template v-slot:[`item.assigned_to`]="{ item }">
-              {{ item.assigned_to || '—' }}
-            </template>
             <template v-slot:[`item.status`]="{ item }">
               <v-chip :color="getStatusColor(item.tag_status)" size="small" class="text-capitalize">
                 {{ item.tag_status }}
@@ -67,9 +59,7 @@
 
             <template v-slot:[`item.actions`]="{ item }">
               <!-- <InventoryTagAssignmentForm :tag="item" @saved="fetchTags" /> -->
-              <InventoryTagCreateFromVirtual v-if="item.is_virtual" :virtual-tag="item" :item-id="itemId"
-                @saved="fetchTags" />
-              <InventoryTagEditForm v-else :tag="item" @saved="fetchTags" />
+              <InventoryTagEditForm :tag="item" @saved="fetchTags" />
             </template>
           </v-data-table>
         </v-window-item>
@@ -245,45 +235,24 @@ const fetchItem = async () => {
   console.log("Item data: ", data)
 }
 
-// const fetchTags = async () => {
-//   console.log('fetchTags for itemId:', itemId)
-//   const { data } = await $fetch(`${baseUrl}/api/item-tags?filters[item][documentId][$eq]=${route.params.id}&populate=*`, {
-//     headers: { Authorization: `Bearer ${token.value}` }
-//   })
-
-//   if (data) {
-//     console.log("Data: ", data)
-//     tags.value = data || []
-//   } else {
-//     console.error('fetchTags error')
-//   }
-
-// }
-
 const fetchTags = async () => {
-  const { data } = await $fetch(`${baseUrl}/api/item-tags?filters[item][documentId][$eq]=${itemId}&populate=*&pagination[limit]=1000`, {
+  console.log('fetchTags for itemId:', itemId)
+  const { data } = await $fetch(`${baseUrl}/api/item-tags?filters[item][documentId][$eq]=${route.params.id}&populate=*`, {
     headers: { Authorization: `Bearer ${token.value}` }
   })
 
-  const existingTags = data || []
+  if (data) {
+    console.log("Data: ", data)
+    tags.value = data || []
+    fetchTagCount()
+  } else {
+    console.error('fetchTags error')
+  }
 
-  // How many units have no tags yet?
-  const quantity = item.value?.quantity || 0
-  const untaggedCount = quantity - existingTags.length
-  console.log("Untagged Count: ", untaggedCount)
 
-  // Create virtual untagged available placeholders
-  const virtualTags = Array.from({ length: untaggedCount }, (_, i) => ({
-    id: `virtual-${i}`,
-    tag_number: '—',
-    tag_status: 'available',
-    assigned_to: null,
-    is_virtual: true
-  }))
-
-  console.log("Virtual Tags: ", virtualTags)
-
-  tags.value = [...existingTags, ...virtualTags]
+  // if (error.value) {
+  //   console.error('fetchTags error: ', error.value)
+  // }
 }
 
 
@@ -295,7 +264,7 @@ const openCreateTagDialog = async () => {
 
 const fetchTagCount = async () => {
   // const url = `${baseUrl}/api/item-tags?filters[item][documentId][$eq]=${props.itemId}&pagination[limit]=10000`
-  const url = `${baseUrl}/api/item-tags`
+
   // const { data, error } = await useFetch(url, {
   //   headers: {
   //     Authorization: `Bearer ${token.value}`
@@ -317,29 +286,68 @@ const fetchTagCount = async () => {
   //   console.error('❌ Failed to count tags:', error.value)
   // }
 
-  const { data, error } = await $fetch(url, {
-    headers: {
-      Authorization: `Bearer ${token.value}`
-    }
-  })
+  let allTags = []
+  let page = 0
+  const limit = 25
+  let fetched = 0
+  let totalCount = 0
 
-  if (!error) {
-    tagCount.value = data.length
-    console.log("Tag Count: ", tagCount.value)
+  do {
+    const start = page * limit
+    const url = `${baseUrl}/api/item-tags?pagination[start]=${start}&pagination[limit]=${limit}`
+    const response = await $fetch(url, {
+      headers: {
+        Authorization: `Bearer ${token.value}`
+      }
+    })
 
-    const count = (data.length || 0) + 1
-    // const categoryCode = item.value?.category?.name?.substring(0, 3).toUpperCase() || 'CAT'
-    const categoryCode = 'SNC'
-    console.log("Item: ", item.value)
-    const itemCode = item.value?.data?.department.name.substring(0, 3).toUpperCase() || 'ITM'
-    //const itemCode = item?.data?.department?.name
-    console.log('Item Code: ', item.value?.data?.department.name)
-    const padded = String(count).padStart(5, '0')
-    // tag.value.tag_number = `${categoryCode}-${itemCode}-${padded}`
-    tag.value.tag_number = `${categoryCode}-${itemCode}-${padded}`
-  } else {
-    console.error('❌ Failed to count tags:', error)
-  }
+    console.log('Response: ', response)
+
+    // const { response } = await $fetch(`${baseUrl}/api/item-tags`, {
+    //   headers: {
+    //     Authorization: `Bearer ${token.value}`
+    //   },
+    //   params: {
+    //     'pagination[start]': start,
+    //     'pagination[limit]': limit,
+    //     'sort': 'tag_number:asc'
+    //   }
+    // })
+
+    const items = response?.data || []
+    const meta = response?.meta || []
+    fetched = items.length
+    allTags.push(...items)
+    totalCount = meta?.pagination?.total || allTags.length
+    page++
+
+    console.log("All tags: ", totalCount)
+
+    // if (!error) {
+    //   tagCount.value = data.length
+    //   console.log("Tag Count: ", tagCount.value)
+
+    //   const count = (data.length || 0) + 1
+    //   // const categoryCode = item.value?.category?.name?.substring(0, 3).toUpperCase() || 'CAT'
+    //   const categoryCode = 'SNC'
+    //   console.log("Item: ", item.value)
+    //   const itemCode = item.value?.data?.department.name.substring(0, 3).toUpperCase() || 'ITM'
+    //   //const itemCode = item?.data?.department?.name
+    //   console.log('Item Code: ', item.value?.data?.department.name)
+    //   const padded = String(count).padStart(5, '0')
+    //   // tag.value.tag_number = `${categoryCode}-${itemCode}-${padded}`
+    //   tag.value.tag_number = `${categoryCode}-${itemCode}-${padded}`
+    // } else {
+    //   console.error('❌ Failed to count tags:', error)
+    // }
+  } while (fetched === limit)
+
+  tags.value = allTags
+  tagCount.value = totalCount
+
+
+
+
 }
 
 
@@ -451,7 +459,6 @@ const filteredGroupedTags = computed(() => {
 
 const assignedCount = computed(() => tags.value.length)
 const totalQuantity = computed(() => item.value?.quantity || 0)
-const untaggedCount = computed(() => totalQuantity.value - assignedCount.value)
 // const remainingTags = computed(() => totalQuantity.value - assignedCount.value)
 const remainingTags = computed(() => {
   const total = item.value?.quantity || 0

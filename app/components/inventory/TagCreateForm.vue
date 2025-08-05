@@ -1,6 +1,6 @@
 <template>
   <div>
-    <v-btn color="primary" @click="dialog = true">
+    <v-btn color="primary" variant="elevated" @click="dialog = true">
       <v-icon start>mdi-plus</v-icon> Add Tag
     </v-btn>
 
@@ -22,11 +22,16 @@
         <v-divider></v-divider>
 
         <v-card-text>
-          <v-form @submit.prevent="submitTag" ref="formRef">
+          <v-form @submit.prevent="submitTag" ref="formRef" >
             <v-text-field v-model="tag.tag_number" label="Tag Number" required />
 
-            <v-select v-model="tag.tag_status" label="Status"
-              :items="['available', 'assigned', 'in-repair', 'disposed']" required />
+            <v-select v-model="tag.tag_status" label="Status" :items="[
+              'available',
+              'assigned',
+              'in-repair',
+              'lost',
+              'disposed',
+            ]" required />
 
             <v-select v-model="tag.condition" label="Condition" :items="['new', 'good', 'fair', 'poor', 'damaged']"
               required />
@@ -39,10 +44,15 @@
 
             <v-card-actions class="mt-4">
               <v-spacer />
-              <v-btn type="submit" color="primary" :loading="loading">
+              <v-btn type="submit" variant="elevated" color="primary" :loading="loading" :disabled="isLimitReached">
                 Save Tag
               </v-btn>
-              <v-btn text @click="() => { resetForm(); dialog = false }">Cancel</v-btn>
+              <v-btn text @click="
+                () => {
+                  resetForm();
+                  dialog = false;
+                }
+              ">Cancel</v-btn>
             </v-card-actions>
           </v-form>
         </v-card-text>
@@ -52,172 +62,150 @@
 </template>
 
 <script setup>
-const baseUrl = useRuntimeConfig().public.strapiBaseURL
-const token = useCookie('token')
-const generating = ref(false)
+const { triggerToast } = useToast();
+const baseUrl = useRuntimeConfig().public.strapiBaseURL;
+const token = useCookie("token");
+const generating = ref(false);
 
 const props = defineProps({
   itemId: {
     type: [Number, String],
-    required: true
-  }
-})
+    required: true,
+  },
+  assignedCount: Number,
+  totalQuantity: Number,
+});
 
-const emit = defineEmits(['saved'])
-const dialog = ref(false)
+const emit = defineEmits(["saved"]);
+const dialog = ref(false);
 const tag = ref({
-  tag_number: '',
-  tag_status: 'available',
-  condition: 'good',
-  assigned_to: '',
-  location: '',
-  remarks: ''
-})
+  tag_number: "",
+  tag_status: "available",
+  condition: "good",
+  assigned_to: "",
+  location: "",
+  remarks: "",
+});
 
 const resetForm = async () => {
-  generating.value = true
+  generating.value = true;
   tag.value = {
-    tag_number: '',
-    tag_status: 'available',
-    condition: 'good',
-    assigned_to: '',
-    location: '',
-    remarks: ''
-  }
-await fetchItemAndTags()
- await generateTagNumber()
- generating.value = true
-}
+    tag_number: "",
+    tag_status: "available",
+    condition: "good",
+    assigned_to: "",
+    location: "",
+    remarks: "",
+  };
+  await fetchItemAndTags();
+  await generateTagNumber();
+  generating.value = true;
+};
 
-const loading = ref(false)
-const item = ref(null)
-const tags = ref([])
+const loading = ref(false);
+const item = ref(null);
+const tags = ref([]);
 
 const fetchItemAndTags = async () => {
-  const url = `${baseUrl}/api/items/${props.itemId}?populate[category][populate]=*&populate[department][populate]=*&populate[tags][populate]=item`
-  const { data, error } = await useFetch(url, {
-    headers: {
-      Authorization: `Bearer ${token.value}`
-    }
-  })
+  const url = `${baseUrl}/api/items/${props.itemId}?populate[category][populate]=*&populate[department][populate]=*&populate[tags][populate]=item`;
+  // const { data, error } = await useFetch(url, {
+  //   headers: {
+  //     Authorization: `Bearer ${token.value}`
+  //   }
+  // })
+  // if (!error.value) {
+  //   item.value = data.value.data
+  //   tags.value = item.value.item_tags?.data || []
+  //   // fetchTagCount()
+  //   generateTagNumber()
+  // }
 
-  if (!error.value) {
-    item.value = data.value.data
-    tags.value = item.value.item_tags?.data || []
+  const { data, error } = await $fetch(url, {
+    headers: {
+      Authorization: `Bearer ${token.value}`,
+    },
+  });
+  if (!error) {
+    item.value = data;
+    tags.value = item.value.item_tags?.data || [];
     // fetchTagCount()
-    generateTagNumber()
+    generateTagNumber();
   }
-}
+};
 
 const generateTagNumber = async () => {
-  const { data, error } = await useFetch(`${baseUrl}/api/item-tags`, {
-    headers: {
-      Authorization: `Bearer ${token.value}`
-    }
-  })
-
-  const count = (data.value?.data?.length || 0) + 1
-
-  // Make sure item.value is available
-  if (!item.value) {
-    console.warn('⚠️ Cannot generate tag number — item is null')
-    return
-  }
-
-  const itemName = item.value?.name || 'ITM'
-  const categoryName = item.value?.category?.data?.name || 'CAT'
-
+  // const { data, error } = await useFetch(`${baseUrl}/api/item-tags`, {
+  //   headers: {
+  //     Authorization: `Bearer ${token.value}`
+  //   }
+  // })
+  // const count = (data.value?.data?.length || 0) + 1
+  // // Make sure item.value is available
+  // if (!item.value) {
+  //   console.warn('⚠️ Cannot generate tag number — item is null')
+  //   return
+  // }
   // Use 3-Letter prefix + padded number
-  const itemCode = itemName.substring(0, 3).toUpperCase()
-  const categoryCode = categoryName.substring(0, 3).toUpperCase()
-  const padded = String(count).padStart(3, '0')
+  // const categoryName = 'INV'
+  // const categoryName = item.value?.category?.data?.name || 'CAT'
+  // const itemCode = itemName.substring(0, 3).toUpperCase()
+  // const categoryCode = categoryName.substring(0, 3).toUpperCase()
 
-  tag.value.tag_number = `${categoryCode}-${itemCode}-${padded}`
-}
+  const { data, error } = await $fetch(`${baseUrl}/api/item-tags`, {
+    headers: {
+      Authorization: `Bearer ${token.value}`,
+    },
+  });
 
-
-// const fetchTagCount = async () => {
-//   // const url = `${baseUrl}/api/item-tags?filters[item][documentId][$eq]=${props.itemId}&pagination[limit]=10000`
-//   const url = `${baseUrl}/api/item-tags`
-//   const { data, error } = await useFetch(url, {
-//     headers: {
-//       Authorization: `Bearer ${token.value}`
-//     }
-//   })
-
-//   if (!error.value) {
-//     const count = (data.value?.data?.length || 0) + 1
-//     // const categoryCode = item.value?.category?.name?.substring(0, 3).toUpperCase() || 'CAT'
-//     const categoryCode = 'SNC'
-//     console.log("Item: ", item.value)
-//     const itemCode = item.value?.department.name.substring(0, 3).toUpperCase() || 'ITM'
-//     //const itemCode = item?.data?.department?.name
-//     console.log('Item Code: ', item.value?.department.name)
-//     const padded = String(count).padStart(5, '0')
-//     // tag.value.tag_number = `${categoryCode}-${itemCode}-${padded}`
-//     tag.value.tag_number = `${categoryCode}-${itemCode}-${padded}`
-//     console.log('Tag number: ', tag.value.tag_number)
-//   } else {
-//     console.error('❌ Failed to count tags:', error.value)
-//   }
-
-//   // if (!error.value) {
-//   //   const count = (data.value?.data?.length || 0) + 1
-//   //   // const categoryCode = item.value?.category?.name?.substring(0, 3).toUpperCase() || 'CAT'
-//   //   const categoryCode = 'SNC'
-//   //   console.log("Item: ", item.value)
-//   //   // const itemCode = item.value?.name?.substring(0, 3).toUpperCase() || 'ITM'
-//   //   const padded = String(count).padStart(5, '0')
-//   //   // tag.value.tag_number = `${categoryCode}-${itemCode}-${padded}`
-//   //   tag.value.tag_number = `${categoryCode}-${padded}`
-//   // } else {
-//   //   console.error('❌ Failed to count tags:', error.value)
-//   // }
-// }
+  if (!error) {
+    const count = (data.length || 0) + 1;
+    const categoryCode = "INV";
+    const itemName = item.value?.department.name || "ITM";
+    const itemCode = itemName.substring(0, 3).toUpperCase();
+    const padded = String(count).padStart(5, "0");
+    tag.value.tag_number = `${categoryCode}-${itemCode}-${padded}`;
+  } else {
+    console.error("❌ Failed to count tags:", error);
+  }
+};
 
 watch(dialog, async (val) => {
   if (val) {
-    await fetchItemAndTags()
+    await fetchItemAndTags();
   }
-})
-
+});
 
 const submitTag = async () => {
-  loading.value = true
+  loading.value = true;
+  if (props.assignedCount >= props.totalQuantity) {
+    triggerToast("All units have already been tagged.", "error");
+    loading.value = false;
+    return;
+  }
 
   const payload = {
     data: {
       ...tag.value,
-      item: props.itemId
-    }
-  }
-
-  const { error } = await useFetch(`${baseUrl}/api/item-tags`, {
-    method: 'POST',
-    headers: {
-      Authorization: `Bearer ${token.value}`
+      item: props.itemId,
     },
-    body: payload
-  })
+  };
+  const { error } = await useFetch(`${baseUrl}/api/item-tags`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${token.value}`,
+    },
+    body: payload,
+  });
 
-  loading.value = false
+  loading.value = false;
 
   if (!error.value) {
-    // tag.value = {
-    //   tag_number: '',
-    //   tag_status: 'available',
-    //   condition: 'good',
-    //   assigned_to: '',
-    //   location: '',
-    //   remarks: ''
-    // }
-    resetForm()
-    dialog.value = false
-    emit('saved')
+    resetForm();
+    emit("saved");
   } else {
-    console.error('❌ Tag creation failed:', error.value)
+    console.error("❌ Tag creation failed:", error.value);
   }
-}
+};
 
-onMounted(fetchItemAndTags)
+const isLimitReached = computed(() => props.assignedCount >= props.totalQuantity)
 </script>

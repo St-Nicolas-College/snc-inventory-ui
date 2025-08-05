@@ -1,5 +1,6 @@
 <template>
   <div>
+    <AppBreadcrumb :breadcrumbs="breadcrumbItems" theme="light" class="mb-3" />
     <h2 class="mb-4">Categories Page</h2>
     <v-card elevation="0">
       <v-card-title class="d-flex align-center">
@@ -81,6 +82,12 @@ useHead({
   title: 'Categories',
 
 })
+
+const breadcrumbItems = [
+  { text: 'Home', to: '/', icon: 'mdi-home-outline' },
+  { text: 'Categories' },
+
+]
 
 const form = ref({
   name: ''
