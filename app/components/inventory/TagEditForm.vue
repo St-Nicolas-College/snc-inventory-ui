@@ -1,7 +1,7 @@
 <template>
   <v-dialog v-model="dialog" max-width="500">
     <template #activator="{ props }">
-      <v-btn v-bind="props" variant="tonal" size="small" color="blue">
+      <v-btn v-bind="props" variant="elevated" flat size="small" color="blue">
         <v-icon start>mdi-pencil</v-icon> Edit
       </v-btn>
     </template>
@@ -22,7 +22,7 @@
           <v-select v-model="form.condition" label="Condition" :items="['new', 'good', 'fair', 'poor', 'damaged']"
               required />
           <v-text-field v-model="form.location" label="Location" />
-          <v-textarea v-model="form.remarks" label="Remarks" />
+          <v-textarea v-model="form.remarks" label="Remarks" rows="2" />
         </v-card-text>
 
         <v-card-actions>

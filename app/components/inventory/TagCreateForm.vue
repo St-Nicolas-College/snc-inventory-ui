@@ -4,7 +4,7 @@
       <v-icon start>mdi-plus</v-icon> Add Tag
     </v-btn>
 
-    <v-dialog v-model="dialog" max-width="600px">
+    <v-dialog v-model="dialog" max-width="500">
       <v-card>
         <!-- <v-card-title>
           <span class="text-h6">Add New Tag</span>

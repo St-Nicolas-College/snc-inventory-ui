@@ -192,7 +192,7 @@ const headersTab = [
   { title: 'Assigned Date', key: 'assigned_date' },
   { title: 'Status', key: 'status' },
   { title: 'Remarks', key: 'remarks' },
-  { title: 'Actions', key: 'actions', sortable: false }
+  { title: 'Actions', key: 'actions', align: 'center', sortable: false }
 ]
 
 const statusGroups = [
@@ -227,7 +227,7 @@ const resetForm = async () => {
     remarks: ''
   }
   //await fetchItemAndTags()
-  await fetchTagCount()
+  //await fetchTagCount()
   //generating.value = true
 }
 
@@ -273,12 +273,17 @@ const fetchTags = async () => {
   console.log("Untagged Count: ", untaggedCount)
 
   // Create virtual untagged available placeholders
+  const categoryCode = "INV"
+  const itemName = item.value?.department?.name || 'ITM'
+  const itemCode = itemName.substring(0, 3).toUpperCase()
   const virtualTags = Array.from({ length: untaggedCount }, (_, i) => ({
     id: `virtual-${i}`,
     tag_number: '—',
     tag_status: 'available',
-    assigned_to: null,
-    is_virtual: true
+    assigned_to: 'Unassigned',
+    is_virtual: true,
+    category_code: categoryCode,
+    item_code: itemCode
   }))
 
   console.log("Virtual Tags: ", virtualTags)
@@ -290,7 +295,7 @@ const fetchTags = async () => {
 const openCreateTagDialog = async () => {
   createTagDialog.value = true;
   fetchItem()
-  fetchTagCount()
+  //fetchTagCount()
 }
 
 const fetchTagCount = async () => {
@@ -465,7 +470,7 @@ const remainingTags = computed(() => {
 onMounted(async () => {
   await fetchItem()
   await fetchTags()
-  await fetchTagCount()
+  //await fetchTagCount()
 })
 
 </script>
