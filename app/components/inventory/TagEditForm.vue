@@ -17,7 +17,16 @@
       <v-form @submit.prevent="updateTag">
         <v-card-text>
           <v-text-field v-model="form.tag_number" label="Tag Number" readonly />
-          <v-text-field v-model="form.assigned_to" label="Assigned To" />
+          <!-- <v-text-field v-model="form.assigned_to" label="Assigned To" /> -->
+          <v-autocomplete
+            v-model="form.assigned_to"
+            :items="borrowers"
+            item-title="name"
+            item-value="documentId"
+            label="Assigned To"
+            return-object
+            clearable
+          />
           <v-select v-model="form.tag_status" :items="statusOptions" label="Status" required />
           <v-select v-model="form.condition" label="Condition" :items="['new', 'good', 'fair', 'poor', 'damaged']"
               required />
@@ -51,11 +60,13 @@ const dialog = ref(false)
 const form = ref({
   tag_number: '',
   tag_status: '',
-  assigned_to: '',
+  assigned_to: null,
   condition: '',
   location: '',
   remarks: ''
 })
+
+const borrowers = ref([])
 
 const statusOptions = ['available', 'assigned', 'in-repair', 'lost', 'disposed']
 
@@ -72,14 +83,29 @@ watch(dialog, (val) => {
   }
 })
 
+const fetchBorrowers = async () => {
+  try {
+    const res = await $fetch(`${baseUrl}/api/borrowers`, {
+      headers: { Authorization: `Bearer ${token.value}` }
+    })
+    borrowers.value = res.data
+  } catch (err) {
+    console.error('Failed to fetch borrowers', err)
+  }
+}
+
 const updateTag = async () => {
+  console.log("Assigned To: ", form.value.assigned_to)
   const { error } = await useFetch(`${baseUrl}/api/item-tags/${props.tag.documentId}`, {
     method: 'PUT',
     headers: {
       Authorization: `Bearer ${token.value}`
     },
     body: {
-      data: { ...form.value }
+      data: { 
+        ...form.value,
+        assigned_to: form.value.assigned_to?.id
+      }
     }
   })
 
@@ -91,4 +117,6 @@ const updateTag = async () => {
     console.error('Update failed:', error.value)
   }
 }
+
+onMounted(fetchBorrowers)
 </script>

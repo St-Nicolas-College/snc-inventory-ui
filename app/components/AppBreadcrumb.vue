@@ -32,7 +32,7 @@
         <span
           v-else
           class="font-weight-medium text-capitalize"
-          :class="theme === 'dark' ? 'text-white' : 'text-green-darken-2'"
+          :class="theme === 'dark' ? 'text-white' : 'text-green-darken-1'"
         >
           {{ item.text }}
         </span>

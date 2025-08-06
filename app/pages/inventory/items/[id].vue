@@ -56,7 +56,7 @@
             </template>
 
             <template v-slot:[`item.assigned_to`]="{ item }">
-              {{ item.assigned_to || '—' }}
+              {{ item.assigned_to?.name || '—' }}
             </template>
             <template v-slot:[`item.status`]="{ item }">
               <v-chip :color="getStatusColor(item.tag_status)" size="small" class="text-capitalize">
@@ -145,6 +145,10 @@
 </template>
 
 <script setup>
+useHead({
+  title: 'Inventory',
+
+})
 const { triggerToast } = useToast();
 const route = useRoute()
 const token = useCookie('token')

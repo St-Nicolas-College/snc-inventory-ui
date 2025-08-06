@@ -1,0 +1,9 @@
+services:
+  snc-inventory-ui:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - ${PORT}:${PORT}
+    environment:
+      - BASE_URL=${BASE_URL}

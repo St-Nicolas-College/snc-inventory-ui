@@ -6,10 +6,14 @@
         <v-btn color="primary">Add Item</v-btn>
       </NuxtLink>
     </v-row> -->
-<AppBreadcrumb :breadcrumbs="breadcrumbItems" theme="light" class="mb-3" />
+    <AppBreadcrumb :breadcrumbs="breadcrumbItems" theme="light" class="mb-3" />
     <!-- <AppBreadcrumb :breadcrumbs="breadcrumbItems" theme="light" /> -->
-    <h2 class="mb-4">Inventory Items</h2>
-    <v-card elevation="0">
+    <!-- <h2 class="mb-4">Inventory Items</h2> -->
+    <v-card elevation="0" rounded="lg" class="mt-5">
+      <v-toolbar color="transparent">
+        <v-toolbar-title><v-icon start>mdi-archive</v-icon> Inventory Items</v-toolbar-title>
+      </v-toolbar>
+      <v-divider></v-divider>
       <v-card-title class="d-flex align-center">
         <!-- <v-btn class="my-2 text-capitalize" prepend-icon="mdi-plus" color="primary" to="/inventory/create">Add
           Item</v-btn> -->
@@ -40,8 +44,9 @@
         </template>
 
         <template v-slot:[`item.actions`]="{ item }">
-          <!-- <v-btn size="small" class="mr-1" variant="tonal" color="blue" :to="`/inventory/${item.documentId}`"><v-icon>mdi-pencil</v-icon> Edit</v-btn> -->
-           <v-btn size="small" class="mr-1" variant="tonal"
+          <v-btn size="small" class="mr-1" variant="tonal" color="primary" :to="`/inventory/${item.documentId}`"><v-icon
+              start>mdi-open-in-new</v-icon> View</v-btn>
+          <v-btn size="small" class="mr-1" variant="tonal"
             :to="`/inventory/items/${item.documentId}`"><v-icon>mdi-open-in-new</v-icon> View</v-btn>
           <v-btn size="small" class="mr-1" variant="tonal" color="blue"
             @click="openEditDialog(item)"><v-icon>mdi-pencil</v-icon> Edit</v-btn>

@@ -202,7 +202,7 @@
       <v-menu offset-y>
         <template v-slot:activator="{ props }">
           <v-btn icon v-bind="props" class="ml-2" color="purple">
-            <v-avatar size="35" color="purple">
+            <v-avatar size="38" color="purple">
               <span>{{ userInitial }}</span>
               <!-- <v-img
                 src="https://avatars.githubusercontent.com/u/9064066?v=4"
