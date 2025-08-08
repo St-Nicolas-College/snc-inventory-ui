@@ -156,6 +156,9 @@
         <template v-slot:[`item.borrower`]="{ item }">
           {{ item.borrower?.name || "—" }}
         </template>
+         <template v-slot:[`item.department`]="{ item }">
+          {{ item.borrower?.department || "—" }}
+        </template>
         <template v-slot:[`item.quantity`]="{ item }">
           {{ item.quantity }}
         </template>
@@ -194,6 +197,7 @@ const loading = ref(false);
 
 const acquisitionHeaders = [
   { title: "Borrower", value: "borrower" },
+  { title: "Department", value: "department" },
   { title: "Quantity", value: "quantity" },
   { title: "Remarks", value: "remarks" },
   { title: "Date Acquired", value: "createdAt" },

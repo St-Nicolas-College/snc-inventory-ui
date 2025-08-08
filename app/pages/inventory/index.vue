@@ -58,7 +58,7 @@
     </v-card>
 
     <!-- Create Item -->
-    <v-dialog v-model="createDialog" max-width="600">
+    <v-dialog v-model="createDialog" max-width="500">
       <v-card>
         <v-card-title class="d-flex align-center">
           <v-icon start>mdi-archive</v-icon> Create Item
@@ -66,20 +66,45 @@
           <v-btn @click="createDialog = false" flat icon><v-icon>mdi-close</v-icon></v-btn>
         </v-card-title>
         <v-divider></v-divider>
-        <v-card-text class="mt-5">
-          <v-form ref="createItemForm" @submit.prevent="createItem">
-            <v-text-field v-model="createForm.name" label="Item Name" required />
-            <v-text-field v-model.number="createForm.quantity" label="Quantity" type="number" required />
-            <v-select v-model="createForm.category" :items="categories" item-title="name" item-value="id"
-              label="Category" />
-
-            <v-select v-model="createForm.department" :items="departments" item-title="name" item-value="id"
-              label="Department" />
-
-            <v-select v-model="createForm.supplier" :items="suppliers" item-title="name" item-value="id"
-              label="Supplier" />
+        <v-card-text>
+          <v-form ref="createItemForm" v-model="formValid" @submit.prevent="createItem">
+            <v-row dense="compact">
+              <v-col cols="12">
+                <v-text-field v-model="createForm.name" :rules="[rules.required]" hide-details="auto" label="Item Name"
+                  required />
+              </v-col>
+              <v-col cols="12">
+                <v-textarea v-model="createForm.description" hide-details="auto" label="Description" rows="2" />
+              </v-col>
+              <v-col cols="12">
+                <v-text-field v-model="createForm.serialNum" hide-details="auto" label="Serial Number" />
+              </v-col>
+              <v-col cols="12">
+                <v-row>
+                  <v-col cols="12" md="6">
+                    <v-text-field v-model="createForm.unit" hide-details="auto" label="Unit" />
+                  </v-col>
+                  <v-col cols="12" md="6">
+                    <v-text-field v-model.number="createForm.quantity" :rules="[rules.required]" hide-details="auto"
+                      label="Quantity" type="number" required />
+                  </v-col>
+                </v-row>
+              </v-col>
+              <v-col cols="12">
+                <v-select v-model="createForm.category" :items="categories" :rules="[rules.required]" hide-details="auto" item-title="name"
+                  item-value="id" label="Category" />
+              </v-col>
+              <v-col cols="12">
+                <v-select v-model="createForm.department" :items="departments" hide-details="auto" item-title="name"
+                  item-value="id" label="Department" />
+              </v-col>
+              <v-col cols="12">
+                <v-select v-model="createForm.supplier" :items="suppliers" item-title="name" item-value="id"
+                  label="Supplier" />
+              </v-col>
+            </v-row>
             <!-- Optional: Add v-selects for category, department, etc. -->
-            <v-btn type="submit" color="primary" class="mt-4" block>Update</v-btn>
+            <v-btn type="submit" color="primary" class="mt-4" block>Submit</v-btn>
           </v-form>
         </v-card-text>
 
@@ -87,7 +112,7 @@
     </v-dialog>
 
     <!-- Edit Dialog -->
-    <v-dialog v-model="editDialog" max-width="600">
+    <v-dialog v-model="editDialog" max-width="500">
       <v-card>
         <v-card-title class="d-flex align-center">
           <v-icon start>mdi-archive</v-icon> Edit Item
@@ -97,25 +122,47 @@
         <v-divider></v-divider>
         <v-card-text class="mt-5">
           <v-form @submit.prevent="updateItem">
-            <v-text-field v-model="editForm.name" label="Item Name" required />
-            <v-text-field v-model.number="editForm.quantity" label="Quantity" type="number" required />
-            <v-select v-model="editForm.category" :items="categories" item-title="name" item-value="id"
-              label="Category" />
-
-            <v-select v-model="editForm.department" :items="departments" item-title="name" item-value="id"
-              label="Department" />
-
-            <v-select v-model="editForm.supplier" :items="suppliers" item-title="name" item-value="id"
-              label="Supplier" />
+              <v-row dense="compact">
+              <v-col cols="12">
+                <v-text-field v-model="editForm.name" :rules="[rules.required]" hide-details="auto" label="Item Name"
+                  required />
+              </v-col>
+              <v-col cols="12">
+                <v-textarea v-model="editForm.description" hide-details="auto" label="Description" rows="2" />
+              </v-col>
+              <v-col cols="12">
+                <v-text-field v-model="editForm.serialNum" hide-details="auto" label="Serial Number" />
+              </v-col>
+              <v-col cols="12">
+                <v-row>
+                  <v-col cols="12" md="6">
+                    <v-text-field v-model="editForm.unit" hide-details="auto" label="Unit" />
+                  </v-col>
+                  <v-col cols="12" md="6">
+                    <v-text-field v-model.number="editForm.quantity" :rules="[rules.required]" hide-details="auto"
+                      label="Quantity" type="number" required />
+                  </v-col>
+                </v-row>
+              </v-col>
+              <v-col cols="12">
+                <v-select v-model="editForm.category" :items="categories" :rules="[rules.required]" hide-details="auto" item-title="name"
+                  item-value="id" label="Category" />
+              </v-col>
+              <v-col cols="12">
+                <v-select v-model="editForm.department" :items="departments" hide-details="auto" item-title="name"
+                  item-value="id" label="Department" />
+              </v-col>
+              <v-col cols="12">
+                <v-select v-model="editForm.supplier" :items="suppliers" item-title="name" item-value="id"
+                  label="Supplier" />
+              </v-col>
+            </v-row>
             <!-- Optional: Add v-selects for category, department, etc. -->
             <v-btn type="submit" color="primary" class="mt-4" block>Update</v-btn>
           </v-form>
         </v-card-text>
-
       </v-card>
     </v-dialog>
-
-
   </div>
 </template>
 
@@ -153,12 +200,16 @@ const breadcrumbItems = [
 
 ]
 
+const formValid = ref(true)
 const editDialog = ref(false)
 const createDialog = ref(false)
 const selectedItemId = ref(null)
 const createItemForm = ref(null)
 const createForm = ref({
   name: '',
+  description: '',
+  serialNum: '',
+  unit: 'pcs',
   quantity: 0,
   category: null,
   department: null,
@@ -166,6 +217,9 @@ const createForm = ref({
 })
 const editForm = ref({
   name: '',
+  description: '',
+  serialNum: '',
+  unit: 'pcs',
   quantity: 0,
   category: null,
   department: null,
@@ -175,6 +229,12 @@ const editForm = ref({
 const categories = ref([])
 const departments = ref([])
 const suppliers = ref([])
+
+const rules = {
+  required: (v) => !!v || 'Required',
+  numeric: (v) => !isNaN(Number(v)) || 'Must be a number',
+  positive: (v) => Number(v) > 0 || 'Must be greater than 0',
+}
 
 onMounted(async () => {
   // const { data } = await useFetch(`${baseUrl}/api/items`, {
@@ -241,29 +301,33 @@ const openCreateDialog = async (item) => {
 
 // Create item
 const createItem = async () => {
-  const isValid = await createItemForm.value.validate();
+  // const isValid = await createItemForm.value.validate();
+  const { valid } = await createItemForm.value.validate();
+  if (!valid) return
   try {
-    if (isValid.valid) {
-      await $fetch(`${baseUrl}/api/items`, {
-        method: 'POST',
-        headers: {
-          Authorization: `Bearer ${token.value}`
-        },
-        body: {
-          data: {
-            name: createForm.value.name,
-            quantity: createForm.value.quantity,
-            category: createForm.value.category,
-            department: createForm.value.department,
-            supplier: createForm.value.supplier
-          }
+    await $fetch(`${baseUrl}/api/items`, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${token.value}`
+      },
+      body: {
+        data: {
+          name: createForm.value.name,
+          description: createForm.value.description,
+          serial_number: createForm.value.serialNum,
+          unit: createForm.value.unit,
+          quantity: createForm.value.quantity,
+          category: createForm.value.category,
+          department: createForm.value.department,
+          supplier: createForm.value.supplier
         }
-      })
-      triggerToast('Item created successfully!', 'success')
-      //createDialog.value = false
-      createItemForm.value?.reset();
-      getItems();
-    }
+      }
+    })
+    triggerToast('Item created successfully!', 'success')
+    //createDialog.value = false
+    createItemForm.value?.reset();
+    createForm.value.unit = 'pcs'
+    getItems();
   } catch (err) {
     console.error('Error creating item:', err)
     triggerToast('Failed to create item.', 'error')
@@ -286,6 +350,9 @@ const openEditDialog = async (item) => {
 
   editForm.value = {
     name: data.name,
+    description: data.description,
+    serialNum: data.serial_number,
+    unit: data.unit,
     quantity: data.quantity,
     category: data.category?.id || null,
     department: data.department?.id || null,
@@ -306,6 +373,9 @@ const updateItem = async (item) => {
       body: {
         data: {
           name: editForm.value.name,
+          description: editForm.value.description,
+          serial_number: editForm.value.serialNum,
+          unit: editForm.value.unit,
           quantity: editForm.value.quantity,
           category: editForm.value.category,
           department: editForm.value.department,
