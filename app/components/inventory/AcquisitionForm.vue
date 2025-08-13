@@ -65,6 +65,7 @@ const form = reactive({
 
 const openDialog = () => {
   dialog.value = true
+  fetchBorrowers()
 }
 
 const fetchBorrowers = async () => {
@@ -122,7 +123,7 @@ const submitAcquisition = async () => {
   }
 }
 
-onMounted(fetchBorrowers)
+// onMounted(fetchBorrowers)
 </script>
 
 <style></style>

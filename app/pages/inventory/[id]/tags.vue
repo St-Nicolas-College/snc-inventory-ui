@@ -1,136 +1,324 @@
 <template>
   <div>
-    <h1>Tagged Items</h1>
+    <h2 class="mb-4">Item Details</h2>
 
-
-    <v-card class="pa-4" elevation="2">
-      <v-card-title>
-        {{ item.name }} - Physical Units
-      </v-card-title>
-      <v-card-subtitle>
-        Quantity: {{ item.tags?.length || 0 }}
-      </v-card-subtitle>
-
-      <v-divider class="my-4"></v-divider>
-
-      <v-row>
-        <v-col
-          v-for="(tag, index) in item.tags"
-          :key="tag.id"
-          cols="12"
-          sm="4"
-          md="3"
-        >
-          <v-card class="pa-3 text-center" elevation="1">
-            <div class="text-h6">Unit #{{ index + 1 }}</div>
-            <div class="text-subtitle-1 font-weight-bold">
-              Tag: {{ tag.tag_number }}
-            </div>
-
-            <!-- Optional QR Code -->
-            <v-img
-              v-if="tag.tag_number"
-              :src="`https://api.qrserver.com/v1/create-qr-code/?size=100x100&data=${tag.tag_number}`"
-              height="100"
-              contain
-              class="mt-2"
-            ></v-img>
-          </v-card>
-        </v-col>
-      </v-row>
-    </v-card>
-
-
-    
-    <v-card class="pa-4" max-width="600" elevation="2">
-      <v-card-title>
-        Assign Tag Numbers
-      </v-card-title>
-
-      <v-divider class="my-2"></v-divider>
-
-      <v-card-subtitle>
-        Item: {{ item.name }}  
-        <br>
-        Quantity: {{ item.quantity }}
-      </v-card-subtitle>
-
-      <v-form @submit.prevent="saveTags" v-model="formValid">
+    <!-- Item Summary -->
+    <!-- <v-card class="mb-6" outlined>
+      <v-card-title>{{ itemDetails.name }}</v-card-title>
+      <v-card-text>
         <v-row>
-          <v-col cols="12" sm="6" v-for="(tag, index) in tags" :key="index">
-            <v-text-field
-              v-model="tags[index]"
-              :label="`Tag #${index + 1}`"
-              placeholder="Enter tag number"
-              :rules="[v => !!v || 'Tag number is required']"
-              clearable
-            ></v-text-field>
+          <v-col cols="12" md="3">
+            <strong>Total Quantity:</strong> {{ itemDetails.quantity }}
+          </v-col>
+          <v-col cols="12" md="3">
+            <strong>Remaining Quantity:</strong> {{ remainingQuantity }}
+          </v-col>
+          <v-col cols="12" md="3">
+            <strong>Total Acquired:</strong> {{ totalAcquired }}
+          </v-col>
+          <v-col cols="12" md="3">
+            <strong>Total Tags Assigned:</strong> {{ tags.length }}
           </v-col>
         </v-row>
-
-        <v-card-actions class="justify-end">
-          <v-btn color="grey" variant="text" @click="resetForm">Reset</v-btn>
-          <v-btn color="primary" type="submit" :disabled="!formValid">
-            Save Tags
-          </v-btn>
-        </v-card-actions>
-      </v-form>
+      </v-card-text>
+    </v-card> -->
+    <v-card class="mb-6" outlined>
+      <v-card-title>{{ itemDetails.name }}</v-card-title>
+      <v-card-text>
+        <v-row>
+          <v-col cols="12" md="3">
+            <strong>Total Quantity:</strong> {{ itemDetails.quantity }}
+          </v-col>
+           <v-col cols="12" md="3">
+            <strong>is fully Acquired:</strong> {{ isFullyAcquired }}
+          </v-col>
+          <v-col cols="12" md="3">
+            <strong>Total Acquired:</strong> {{ totalAcquired }}
+          </v-col>
+            <v-col cols="12" md="3">
+            <strong>Total Acquisition Acquired:</strong> {{ totalAcquisitionAcquired }}
+          </v-col>
+          <v-col cols="12" md="3">
+            <strong>Total Tags Assigned:</strong> {{ totalTagsAssigned }}
+          </v-col>
+          <v-col cols="12" md="3">
+            <strong>Remaining Quantity:</strong>
+            <span :class="remainingQuantity < 0 ? 'text-red' : ''">
+              {{ remainingQuantity }}
+            </span>
+          </v-col>
+        </v-row>
+      </v-card-text>
     </v-card>
+
+    <v-row>
+      <!-- Acquisition History -->
+      <v-col cols="12" md="6">
+        <v-card outlined>
+          <v-card-title>Acquisition History</v-card-title>
+          <v-data-table :headers="acquisitionHeaders" :items="acquisitions" class="elevation-1">
+            <template v-slot:[`item.borrower`]="{ item }">
+              {{ item.borrower?.name || "—" }}
+            </template>
+            <template v-slot:[`item.department`]="{ item }">
+              {{ item.borrower?.department || "—" }}
+            </template>
+            <template v-slot:[`item.quantity`]="{ item }">
+              {{ item.quantity }}
+            </template>
+            <template v-slot:[`item.createdAt`]="{ item }">
+              {{ formatDate(item.createdAt) }}
+            </template>
+          </v-data-table>
+        </v-card>
+      </v-col>
+
+      <!-- Assigned Tags -->
+      <v-col cols="12" md="6">
+        <v-card outlined>
+          <v-card-title>Assigned Tags</v-card-title>
+          <v-data-table :headers="tagHeaders" :items="tags" class="elevation-1">
+            <template v-slot:[`item.assigned_to`]="{ item }">
+              {{ item.assigned_to?.name }}
+            </template>
+            <template v-slot:[`item.tag_status`]="{ item }">
+              <v-chip :color="getStatusColor(item.tag_status)" dark>
+                {{ item.tag_status }}
+              </v-chip>
+            </template>
+            <template v-slot:[`item.assigned_date`]="{ item }">
+              <!-- {{ formatDate(item.assigned_date) }} -->
+              <div v-if="item.assigned_date === null">
+
+              </div>
+              <div v-else>
+                {{ formatDate(item.assigned_date) }}
+              </div>
+            </template>
+            <template v-slot:[`item.actions`]="{ item }">
+              <v-btn icon="mdi-account-plus" size="small" @click="openAcquisitionDialog(item.documentId)"></v-btn>
+            </template>
+          </v-data-table>
+        </v-card>
+      </v-col>
+    </v-row>
+
+    <v-dialog v-model="showAcquisitionDialog" max-width="500px">
+      <v-card>
+        <v-card-title>Assign Acquisition</v-card-title>
+        <v-card-text>
+          <!-- <v-text-field label="Acquired By" v-model="acquisitionForm.acquired_by" required /> -->
+          <v-autocomplete
+            v-model="acquisitionForm.acquired_by"
+            :items="borrowers"
+            item-title="name"
+            item-value="documentId"
+            label="Assigned To"
+            return-object
+            clearable
+          />
+          <v-date-picker v-model="acquisitionForm.acquired_at" label="Acquisition Date" />
+        </v-card-text>
+        <v-card-actions>
+          <v-btn text @click="showAcquisitionDialog = false">Cancel</v-btn>
+          <v-btn color="primary" @click="saveAcquisition">Save</v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
   </div>
 </template>
 
 <script setup>
-const token = useCookie('token')
-const baseUrl = useRuntimeConfig().public.strapiBaseURL
+const baseUrl = 'http://localhost:1337'
+const token = useCookie("token");
 const route = useRoute()
-const itemId = route.params.id
 
-const item = ref({})
+const itemDetails = ref({})
+const acquisitions = ref([])
 const tags = ref([])
-const formValid = ref(false)
 
-onMounted(async () => {
-  // // Fetch the item details
-  // const { data } = await $fetch(`${baseUrl}/api/items/${itemId}`, {
-  //   headers: { Authorization: `Bearer ${token.value}` }
-  // })
-  // console.log("Result", data)
-  // item.value = data
+const showAcquisitionDialog = ref(false)
+const acquisitionForm = ref({
+  acquired_by: null,
+  acquired_at: ''
+})
+const selectedTagId = ref(null)
 
-  // // Initialize tags array based on quantity
-  // tags.value = Array(item.value.quantity).fill('')
+const acquisitionHeaders = [
+  { title: 'Acquired By', key: 'borrower' },
+  { title: "Department", value: "department" },
+  { title: 'Quantity', key: 'quantity' },
+  { title: 'Date Acquired', key: 'createdAt' },
+  { title: "Remarks", value: "remarks" },
+]
 
-  const { data } = await $fetch(`${baseUrl}/api/items/${itemId}?populate=tags`, {
-    headers: { Authorization: `Bearer ${token.value}` }
-  })
-  item.value = data
+const tagHeaders = [
+  { title: 'Tag Number', key: 'tag_number' },
+  { title: 'Assigned to', key: 'assigned_to' },
+  { title: 'Status', key: 'tag_status' },
+  { title: 'Assigned Date', key: 'assigned_date' },
+  { title: 'Action', key: 'actions' },
 
-   tags.value = Array(item.value.quantity).fill('')
+]
+
+const borrowers = ref([])
+
+// const totalAcquired = computed(() =>
+//   acquisitions.value.reduce((sum, a) => sum + a.quantity, 0)
+// )
+
+const totalAcquired = computed(() =>  {
+  const acquiredFromAcquisitions = acquisitions.value.reduce((sum, a) => sum + a.quantity, 0)
+
+  const acquiredFromTags = tags.value.filter(tag => tag.tag_status === 'assigned').length
+
+  return acquiredFromAcquisitions + acquiredFromTags
 })
 
-const resetForm = () => {
-  tags.value = Array(item.value.quantity).fill('')
+const totalAcquisitionAcquired = computed(() => {
+  const acquiredFromAcquisitions = acquisitions.value.reduce((sum, a) => sum + a.quantity, 0)
+
+  return acquiredFromAcquisitions
+})
+const isFullyAcquired = computed(() => {
+  const totalQty = itemDetails.value?.quantity || 0
+  return totalAcquired.value >= totalQty
+})
+
+
+const totalTagsAssigned = computed(() => { 
+  //tags.value.length 
+  return tags.value.filter(tag => tag.tag_status === 'assigned').length
+})
+
+// const remainingQuantity = computed(() =>
+//   itemDetails.value.quantity - totalAcquired.value
+// )
+
+// ✅ Remaining quantity = Total quantity - max(acquired, tags assigned)
+const remainingQuantity = computed(() => {
+  // Use whichever is greater: acquired units or tags assigned
+  const usedUnits = Math.max(totalAcquired.value, totalTagsAssigned.value)
+  console.log("tag assigned", totalTagsAssigned.value)
+  console.log("Used unit", usedUnits)
+  return itemDetails.value.quantity - usedUnits
+})
+
+const openAcquisitionDialog = (tagId) => {
+  selectedTagId.value = tagId // ✅ this works because selectedTagId exists
+
+  console.log("tag id: ", tagId)
+  showAcquisitionDialog.value = true
 }
 
-const saveTags = async () => {
-  for (let tag of tags.value) {
-    if (tag.trim()) {
-      await $fetch(`${baseUrl}/api/item-tags`, {
-        method: 'POST',
-        headers: { Authorization: `Bearer ${token.value}` },
-        body: {
-          data: {
-            tag_number: tag,
-            item: itemId
-          }
-        }
-      })
-    }
+const fetchBorrowers = async () => {
+  try {
+    const res = await $fetch(`${baseUrl}/api/borrowers`, {
+      headers: { Authorization: `Bearer ${token.value}` }
+    })
+    borrowers.value = res.data
+  } catch (err) {
+    console.error('Failed to fetch borrowers', err)
   }
-  alert('Tags assigned successfully!')
 }
+
+const saveAcquisition = async () => {
+  try {
+    await $fetch(`${baseUrl}/api/item-tags/${selectedTagId.value}`, {
+      method: 'PUT',
+      headers: {
+        Authorization: `Bearer ${token.value}`
+      },
+      body: {
+        data: {
+          assigned_to: acquisitionForm.value.acquired_by?.id,
+          assigned_date: acquisitionForm.value.acquired_at,
+          tag_status: 'assigned'
+        }
+      }
+    })
+    showAcquisitionDialog.value = false
+    fetchTags() // Refresh table
+  } catch (error) {
+    console.error('Failed to save acquisition:', error)
+  }
+}
+
+
+
+function getStatusColor(tag_status) {
+  switch (tag_status) {
+    case 'assigned': return 'blue'
+    case 'in-repair': return 'orange'
+    case 'lost': return 'red'
+    default: return 'green'
+  }
+}
+
+async function fetchItemDetails() {
+  const res = await $fetch(`${baseUrl}/api/items/${route.params.id}`, {
+    headers: { Authorization: `Bearer ${token.value}` },
+    params: { populate: '*' }
+  })
+  itemDetails.value = {
+    name: res.data.name,
+    quantity: res.data.quantity
+  }
+}
+
+async function fetchAcquisitions() {
+  const res = await $fetch(`${baseUrl}/api/acquisitions`, {
+    headers: { Authorization: `Bearer ${token.value}` },
+    params: {
+      'filters[item][documentId][$eq]': route.params.id,
+      'populate': 'borrower',
+      'sort[0]': 'createdAt:desc'
+    }
+  })
+  // acquisitions.value = res.data.map(a => ({
+  //   borrowed: a.borrowed,
+  //   date: new Date(a.createdAt).toLocaleDateString(),
+  //   quantity: a.quantity
+  // }))
+  acquisitions.value = res.data || []
+  console.log("Acquistion: ", res.data)
+}
+
+async function fetchTags() {
+  const res = await $fetch(`${baseUrl}/api/item-tags`, {
+    headers: { Authorization: `Bearer ${token.value}` },
+    params: {
+      'filters[item][documentId][$eq]': route.params.id,
+      'populate': 'assigned_to',
+      'sort[0]': 'createdAt:asc'
+    }
+  })
+  tags.value = res.data
+  // tags.value = res.data.map(t => ({
+  //   tag_number: t.tag_number,
+  //   tag_status: t.tag_status,
+  //   assigned_date: new Date(t.createdAt).toLocaleDateString()
+  // }))
+}
+
+// Format the acquisition date
+const formatDate = (dateStr) => {
+  return new Date(dateStr).toLocaleDateString("en-US", {
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+  });
+};
+
+
+
+onMounted(async () => {
+  await fetchItemDetails()
+  await fetchAcquisitions()
+  await fetchTags()
+  await fetchBorrowers()
+})
+
 </script>
 
-<style>
-
-</style>
+<style></style>
