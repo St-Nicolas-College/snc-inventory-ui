@@ -29,13 +29,13 @@
           <v-col cols="12" md="3">
             <strong>Total Quantity:</strong> {{ itemDetails.quantity }}
           </v-col>
-           <v-col cols="12" md="3">
+          <v-col cols="12" md="3">
             <strong>is fully Acquired:</strong> {{ isFullyAcquired }}
           </v-col>
           <v-col cols="12" md="3">
             <strong>Total Acquired:</strong> {{ totalAcquired }}
           </v-col>
-            <v-col cols="12" md="3">
+          <v-col cols="12" md="3">
             <strong>Total Acquisition Acquired:</strong> {{ totalAcquisitionAcquired }}
           </v-col>
           <v-col cols="12" md="3">
@@ -57,6 +57,9 @@
         <v-card outlined>
           <v-card-title>Acquisition History</v-card-title>
           <v-data-table :headers="acquisitionHeaders" :items="acquisitions" class="elevation-1">
+             <template v-slot:[`item.tag_number`]="{ item }">
+              {{ item.item_tag?.tag_number || "—" }}
+            </template>
             <template v-slot:[`item.borrower`]="{ item }">
               {{ item.borrower?.name || "—" }}
             </template>
@@ -103,20 +106,27 @@
       </v-col>
     </v-row>
 
-    <v-dialog v-model="showAcquisitionDialog" max-width="500px">
+    <v-dialog v-model="acquisitionDialog" max-width="500">
+      <v-card >
+        <v-form @submit.prevent="acquireItem">
+          <!-- <v-text-field v-model="acquisitionForm.acquired_by" label="Borrower ID" required /> -->
+          <v-autocomplete v-model="acquisitionForm.acquired_by" :items="borrowers" item-title="name"
+            item-value="documentId" label="Assigned To" return-object clearable />
+          <v-date-input v-model="acquisitionForm.acquired_at" label="Acquired Date" required />
+          <v-select v-model="acquisitionForm.tag_id" :items="availableTags" item-title="tag_number" item-value="documentId"
+            label="Select Tag Number" return-object required />
+          <v-btn type="submit" color="primary">Acquire</v-btn>
+        </v-form>
+      </v-card>
+    </v-dialog>
+
+    <!-- <v-dialog v-model="showAcquisitionDialog" max-width="500px">
       <v-card>
         <v-card-title>Assign Acquisition</v-card-title>
         <v-card-text>
-          <!-- <v-text-field label="Acquired By" v-model="acquisitionForm.acquired_by" required /> -->
-          <v-autocomplete
-            v-model="acquisitionForm.acquired_by"
-            :items="borrowers"
-            item-title="name"
-            item-value="documentId"
-            label="Assigned To"
-            return-object
-            clearable
-          />
+
+          <v-autocomplete v-model="acquisitionForm.acquired_by" :items="borrowers" item-title="name"
+            item-value="documentId" label="Assigned To" return-object clearable />
           <v-date-picker v-model="acquisitionForm.acquired_at" label="Acquisition Date" />
         </v-card-text>
         <v-card-actions>
@@ -124,7 +134,7 @@
           <v-btn color="primary" @click="saveAcquisition">Save</v-btn>
         </v-card-actions>
       </v-card>
-    </v-dialog>
+    </v-dialog> -->
   </div>
 </template>
 
@@ -137,14 +147,23 @@ const itemDetails = ref({})
 const acquisitions = ref([])
 const tags = ref([])
 
+const acquisitionDialog = ref(true)
 const showAcquisitionDialog = ref(false)
+// const acquisitionForm = ref({
+//   acquired_by: null,
+//   acquired_at: ''
+// })
+
 const acquisitionForm = ref({
-  acquired_by: null,
-  acquired_at: ''
+  acquired_by: null,  // user or borrower id
+  acquired_at: null,  // date
+  tag_id: null        // physical tag id
 })
 const selectedTagId = ref(null)
+const availableTags = ref([])
 
 const acquisitionHeaders = [
+  { title: 'Tag Number', key: 'tag_number' },
   { title: 'Acquired By', key: 'borrower' },
   { title: "Department", value: "department" },
   { title: 'Quantity', key: 'quantity' },
@@ -167,7 +186,7 @@ const borrowers = ref([])
 //   acquisitions.value.reduce((sum, a) => sum + a.quantity, 0)
 // )
 
-const totalAcquired = computed(() =>  {
+const totalAcquired = computed(() => {
   const acquiredFromAcquisitions = acquisitions.value.reduce((sum, a) => sum + a.quantity, 0)
 
   const acquiredFromTags = tags.value.filter(tag => tag.tag_status === 'assigned').length
@@ -186,7 +205,7 @@ const isFullyAcquired = computed(() => {
 })
 
 
-const totalTagsAssigned = computed(() => { 
+const totalTagsAssigned = computed(() => {
   //tags.value.length 
   return tags.value.filter(tag => tag.tag_status === 'assigned').length
 })
@@ -219,6 +238,57 @@ const fetchBorrowers = async () => {
     borrowers.value = res.data
   } catch (err) {
     console.error('Failed to fetch borrowers', err)
+  }
+}
+
+async function acquireItem() {
+  if (!acquisitionForm.value.acquired_by || !acquisitionForm.value.tag_id) {
+    alert('Please fill all required fields.')
+    return
+  }
+
+  console.log("Tag ID:", acquisitionForm.value.tag_id)
+  // const token = useAuthToken() // your token getter
+  // const baseUrl = useRuntimeConfig().public.strapiBaseUrl
+
+  try {
+    // Step 1: Create acquisition and link to tag
+    const acquisitionRes = await $fetch(`${baseUrl}/api/acquisitions`, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${token.value}`,
+      },
+      body: {
+        data: {
+          borrower: acquisitionForm.value.acquired_by?.id,  // borrower id
+          acquired_date: formatDate(acquisitionForm.value.acquired_at),
+          item: route.params.id,
+          item_tag: acquisitionForm.value.tag_id?.id
+        }
+      }
+    })
+
+    // Step 2: Update the tag status to "assigned"
+    await $fetch(`${baseUrl}/api/item-tags/${acquisitionForm.value.tag_id?.documentId}`, {
+      method: 'PUT',
+      headers: {
+        Authorization: `Bearer ${token.value}`,
+      },
+      body: {
+        data: {
+          assigned_to: acquisitionForm.value.acquired_by?.id,
+          assigned_date:formatDate(acquisitionForm.value.acquired_at),
+          tag_status: 'assigned'
+        }
+      }
+    })
+    console.log("Acquisition saved and tag assigned successfully!")
+    //alert('Acquisition saved and tag assigned successfully!')
+    acquisitionForm.value = { acquired_by: null, acquired_at: null, tag_id: null }
+
+  } catch (error) {
+    console.error('Error acquiring item:', error)
+    //alert('Failed to acquire item.')
   }
 }
 
@@ -271,7 +341,7 @@ async function fetchAcquisitions() {
     headers: { Authorization: `Bearer ${token.value}` },
     params: {
       'filters[item][documentId][$eq]': route.params.id,
-      'populate': 'borrower',
+      'populate': '*',
       'sort[0]': 'createdAt:desc'
     }
   })
@@ -294,21 +364,47 @@ async function fetchTags() {
     }
   })
   tags.value = res.data
-  // tags.value = res.data.map(t => ({
-  //   tag_number: t.tag_number,
-  //   tag_status: t.tag_status,
-  //   assigned_date: new Date(t.createdAt).toLocaleDateString()
-  // }))
 }
 
 // Format the acquisition date
-const formatDate = (dateStr) => {
-  return new Date(dateStr).toLocaleDateString("en-US", {
-    year: "numeric",
-    month: "short",
-    day: "numeric",
-  });
-};
+// const formatDate = (dateStr) => {
+//   return new Date(dateStr).toLocaleDateString("en-US", {
+//     year: "numeric",
+//     month: "short",
+//     day: "numeric",
+//   });
+// };
+
+function formatDate(date) {
+  if (!date) return null
+  return new Date(date).toISOString().split('T')[0]
+}
+
+// Fetch available tags
+const fetchAvailableTags = async () => {
+  try {
+    const res = await $fetch(`${baseUrl}/api/item-tags`, {
+      headers: { Authorization: `Bearer ${token.value}` },
+      params: {
+        'filters[item][documentId][$eq]': route.params.id,
+        'filters[tag_status][$ne]': 'assigned',
+        'sort[0]': 'tag_number:asc',
+        'populate': '*'
+      },
+      // query: {
+      //   filters: {
+      //     item: { documentId: { $eq: route.params.id } },
+      //     tag_status: { $ne: 'assigned' } // only show unassigned tags
+      //   },
+      //   sort: 'tag_number:asc',
+      //   populate: '*'
+      // }
+    })
+    availableTags.value = res.data
+  } catch (err) {
+    console.error('Error fetching available tags:', err)
+  }
+}
 
 
 
@@ -317,6 +413,7 @@ onMounted(async () => {
   await fetchAcquisitions()
   await fetchTags()
   await fetchBorrowers()
+  await fetchAvailableTags()
 })
 
 </script>

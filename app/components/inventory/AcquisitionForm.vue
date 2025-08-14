@@ -23,7 +23,7 @@
               return-object required />
             <v-text-field v-model="form.quantity" :rules="[rules.required, rules.numeric, rules.positive]" label="Quantity" type="number" min="1" required />
             <v-textarea v-model="form.remarks" label="Remarks" rows="2" />
-
+            <v-autocomplete v-model="form.tag_id" :items="availableTags" item-title="tag_number" item-value="documentId" label="Select Tag Number" return-object></v-autocomplete>
             <v-btn type="submit" color="primary" class="mt-4" block :disabled="!formValid" :loading="loading">Save</v-btn>
           </v-form>
         </v-card-text>
@@ -55,17 +55,20 @@ const baseUrl = useRuntimeConfig().public.strapiBaseURL
 
 const dialog = ref(false)
 const loading = ref(false)
+const availableTags = ref([])
 
 const borrowers = ref([])
 const form = reactive({
   borrower: null,
   quantity: 1,
-  remarks: ''
+  remarks: '',
+  tag_id: null
 })
 
 const openDialog = () => {
   dialog.value = true
   fetchBorrowers()
+  fetchAvailableTags()
 }
 
 const fetchBorrowers = async () => {
@@ -76,11 +79,6 @@ const fetchBorrowers = async () => {
 }
 
 
-const resetForm = () => {
-  // formRef.value.reset()
-  
-
-}
 const handleSubmit = async () => {
   const { valid } = await formRef.value.validate()
   if (!valid) return
@@ -101,6 +99,7 @@ const submitAcquisition = async () => {
   }
   loading.value = true
   try {
+    // Step 1: Create acquisition and link to tag
     await $fetch(`${baseUrl}/api/acquisitions`, {
       method: 'POST',
       headers: { Authorization: `Bearer ${token.value}` },
@@ -109,10 +108,27 @@ const submitAcquisition = async () => {
           item: props.itemId,
           borrower: form.borrower?.id || null,
           quantity: form.quantity,
-          remarks: form.remarks
+          remarks: form.remarks,
+          item_tag: form.tag_id?.id
         }
       }
     })
+
+    // Step 2: Update the tag status to "assigned"
+    await $fetch(`${baseUrl}/api/item-tags/${form.tag_id?.documentId}`, {
+      method: 'PUT',
+      headers: {
+        Authorization: `Bearer ${token.value}`,
+      },
+      body: {
+        data: {
+          assigned_to: form.borrower?.id,
+          //assigned_date:formatDate(acquisitionForm.value.acquired_at),
+          tag_status: 'assigned'
+        }
+      }
+    })
+
     emit('saved')
     formRef.value.reset()
     dialog.value = false
@@ -120,6 +136,32 @@ const submitAcquisition = async () => {
     console.error('Error creating acquisition:', err)
   } finally {
     loading.value = false
+  }
+}
+
+// Fetch available tags
+const fetchAvailableTags = async () => {
+  try {
+    const res = await $fetch(`${baseUrl}/api/item-tags`, {
+      headers: { Authorization: `Bearer ${token.value}` },
+      params: {
+        'filters[item][documentId][$eq]': props.itemId,
+        'filters[tag_status][$ne]': 'assigned',
+        'sort[0]': 'tag_number:asc',
+        'populate': '*'
+      },
+      // query: {
+      //   filters: {
+      //     item: { documentId: { $eq: route.params.id } },
+      //     tag_status: { $ne: 'assigned' } // only show unassigned tags
+      //   },
+      //   sort: 'tag_number:asc',
+      //   populate: '*'
+      // }
+    })
+    availableTags.value = res.data
+  } catch (err) {
+    console.error('Error fetching available tags:', err)
   }
 }
 

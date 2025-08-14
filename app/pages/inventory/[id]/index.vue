@@ -226,7 +226,6 @@
         <v-card class="pa-4">
           <h2 class="mb-2">{{ item?.name }}</h2>
           <p>Total Quantity: {{ item?.quantity }}</p>
-
           <v-divider class="my-4" />
 
           <!-- Assign Tag Form -->
@@ -242,7 +241,6 @@
               </v-col>
             </v-row>
           </v-form>
-
           <v-divider class="my-4" />
 
           <!-- Assigned Tags Table -->
@@ -380,11 +378,11 @@ const fetchBorrowers = async () => {
 
 const saveBorrowerAcquisition = async () => {
   try {
-    const acquiredDate = new Date(acquisitionForm.value.acquired_at_v)
+    const acquiredDate = new Date(acquisitionForm.value.acquired_at)
     const formattedDate = acquiredDate.toISOString().split('T')[0]
     const payload = {
       //assigned_date_v: acquisitionForm.value.acquired_at_v,
-      assigned_date: formattedAcquiredDate(acquisitionForm.value.acquired_at_v),
+      assigned_date: formattedAcquiredDate(acquisitionForm.value.acquired_at),
 
     }
     console.log("Payload ", payload)
@@ -404,7 +402,7 @@ const saveBorrowerAcquisition = async () => {
     showAcquisitionDialog.value = false
     fetchTags() // Refresh table
   } catch (err) {
-    console.error('Failed to save acquisition:', error)
+    console.error('Failed to save acquisition:', err)
   }
 }
 
