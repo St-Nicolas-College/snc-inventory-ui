@@ -129,6 +129,7 @@
               </div>
               <!-- <div class="font-weight-medium">{{ user }}</div> -->
               <div class="text-caption text-grey">{{ user.position }}</div>
+              <div class="text-caption text-grey">{{ user.department?.name }} Department</div>
             </v-col>
             <v-col cols="12">
               <v-btn
@@ -267,18 +268,18 @@ const links = [
     roles: ["custodian"],
   },
   {
-    title: "Locations",
-    to: "/locations",
-    icon: "mdi-map-marker",
-    roles: ["custodian"],
-  },
-  {
     title: "Departments",
     to: "/departments",
     icon: "mdi-domain",
     roles: ["custodian"],
   },
   { title: "Suppliers", to: "/suppliers", icon: "mdi-truck", roles: ["custodian"] },
+    {
+    title: "Locations",
+    to: "/locations",
+    icon: "mdi-map-marker",
+    roles: ["custodian"],
+  },
   {
     title: "Transactions",
     to: "/transactions",

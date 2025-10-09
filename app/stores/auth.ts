@@ -97,7 +97,7 @@ export const useMyAuthStore = defineStore("myAuthStore", {
       }
 
       try {
-        const { data, error } = await useFetch(`${baseUrl}/api/users/me`, {
+        const { data, error } = await useFetch(`${baseUrl}/api/users/me?populate=*`, {
           headers: {
             Authorization: `Bearer ${token.value}`,
           },

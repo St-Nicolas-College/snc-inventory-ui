@@ -19,12 +19,17 @@
         <v-divider></v-divider>
         <v-card-text>
           <v-form ref="formRef" v-model="formValid" @submit.prevent="handleSubmit">
-            <v-select v-model="form.borrower" :rules="[rules.required]" :items="borrowers" item-title="name" item-value="id" label="Acquired By"
-              return-object required />
-            <v-text-field v-model="form.quantity" :rules="[rules.required, rules.numeric, rules.positive]" label="Quantity" type="number" min="1" required />
+            <v-select v-model="form.borrower" :rules="[rules.required]" :items="borrowers" item-title="name"
+              item-value="id" label="Acquired By" return-object required />
+            <v-text-field v-model="form.quantity" :rules="[rules.required, rules.numeric, rules.positive]"
+              label="Quantity" type="number" min="1" required />
             <v-textarea v-model="form.remarks" label="Remarks" rows="2" />
-            <v-autocomplete v-model="form.tag_id" :items="availableTags" item-title="tag_number" item-value="documentId" label="Select Tag Number" return-object></v-autocomplete>
-            <v-btn type="submit" color="primary" class="mt-4" block :disabled="!formValid" :loading="loading">Save</v-btn>
+            <v-date-input prepend-icon="" prepend-inner-icon="$calendar" v-model="form.acquired_at"
+            :display-format="format" label="Date input"></v-date-input>
+            <v-autocomplete v-model="form.tag_id" :items="availableTags" item-title="tag_number" item-value="documentId"
+              label="Select Tag Number" return-object></v-autocomplete>
+            <v-btn type="submit" color="primary" class="mt-4" block :disabled="!formValid"
+              :loading="loading">Save</v-btn>
           </v-form>
         </v-card-text>
       </v-card>
@@ -53,6 +58,7 @@ const emit = defineEmits(['saved'])
 const token = useCookie('token')
 const baseUrl = useRuntimeConfig().public.strapiBaseURL
 
+const today = new Date()
 const dialog = ref(false)
 const loading = ref(false)
 const availableTags = ref([])
@@ -62,6 +68,7 @@ const form = reactive({
   borrower: null,
   quantity: 1,
   remarks: '',
+  acquired_at: '',
   tag_id: null
 })
 
@@ -100,6 +107,11 @@ const submitAcquisition = async () => {
   loading.value = true
   try {
     // Step 1: Create acquisition and link to tag
+
+    if (form.tag_id == null) {
+      console.log("Item Tag: ", form.tag_id?.id)
+    }
+
     await $fetch(`${baseUrl}/api/acquisitions`, {
       method: 'POST',
       headers: { Authorization: `Bearer ${token.value}` },
@@ -114,23 +126,32 @@ const submitAcquisition = async () => {
       }
     })
 
-    // Step 2: Update the tag status to "assigned"
-    await $fetch(`${baseUrl}/api/item-tags/${form.tag_id?.documentId}`, {
-      method: 'PUT',
-      headers: {
-        Authorization: `Bearer ${token.value}`,
-      },
-      body: {
-        data: {
-          assigned_to: form.borrower?.id,
-          //assigned_date:formatDate(acquisitionForm.value.acquired_at),
-          tag_status: 'assigned'
+    if (form.tag_id !== null) {
+      // Step 2: Update the tag status to "assigned"
+      await $fetch(`${baseUrl}/api/item-tags/${form.tag_id?.documentId}`, {
+        method: 'PUT',
+        headers: {
+          Authorization: `Bearer ${token.value}`,
+        },
+        body: {
+          data: {
+            assigned_to: form.borrower?.id,
+            assigned_date:formattedAcquiredDate(form.acquired_at),
+            tag_status: 'assigned'
+          }
         }
-      }
-    })
+      })
+    } else {
+      triggerToast(
+        `No tag selected!`,
+        'error',
+        'mdi-alert-circle'
+      )
+    }
 
     emit('saved')
     formRef.value.reset()
+    form.quantity = 1;
     dialog.value = false
   } catch (err) {
     console.error('Error creating acquisition:', err)
@@ -163,6 +184,16 @@ const fetchAvailableTags = async () => {
   } catch (err) {
     console.error('Error fetching available tags:', err)
   }
+}
+
+// Helper function to format into YYYY-MM-DD
+function formattedAcquiredDate(dateInput) {
+  if (!dateInput) return null
+  const date = new Date(dateInput)
+  const yyyy = date.getFullYear()
+  const mm = String(date.getMonth() + 1).padStart(2, '0')
+  const dd = String(date.getDate()).padStart(2, '0')
+  return `${yyyy}-${mm}-${dd}`
 }
 
 // onMounted(fetchBorrowers)

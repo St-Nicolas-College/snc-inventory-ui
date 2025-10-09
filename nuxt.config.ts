@@ -41,4 +41,6 @@ export default defineNuxtConfig({
       strapiBaseURL: process.env.STRAPI_BASE_URL,
     },
   },
+
+  
 });

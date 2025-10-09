@@ -7,6 +7,7 @@
       </NuxtLink>
     </v-row> -->
     <AppBreadcrumb :breadcrumbs="breadcrumbItems" theme="light" class="mb-3" />
+    <!-- {{ user.department?.name }} -->
     <!-- <AppBreadcrumb :breadcrumbs="breadcrumbItems" theme="light" /> -->
     <!-- <h2 class="mb-4">Inventory Items</h2> -->
     <v-card elevation="0" rounded="lg" class="mt-5">
@@ -46,8 +47,8 @@
         <template v-slot:[`item.actions`]="{ item }">
           <v-btn size="small" class="mr-1" variant="tonal" color="primary" :to="`/inventory/${item.documentId}`"><v-icon
               start>mdi-open-in-new</v-icon> View</v-btn>
-          <v-btn size="small" class="mr-1" variant="tonal"
-            :to="`/inventory/items/${item.documentId}`"><v-icon>mdi-open-in-new</v-icon> View</v-btn>
+          <!-- <v-btn size="small" class="mr-1" variant="tonal"
+            :to="`/inventory/items/${item.documentId}`"><v-icon>mdi-open-in-new</v-icon> View</v-btn> -->
           <v-btn size="small" class="mr-1" variant="tonal" color="blue"
             @click="openEditDialog(item)"><v-icon>mdi-pencil</v-icon> Edit</v-btn>
           <v-btn size="small" variant="tonal" color="red" @click="deleteItem(item.documentId)">
@@ -91,8 +92,8 @@
                 </v-row>
               </v-col>
               <v-col cols="12">
-                <v-select v-model="createForm.category" :items="categories" :rules="[rules.required]" hide-details="auto" item-title="name"
-                  item-value="id" label="Category" />
+                <v-select v-model="createForm.category" :items="categories" :rules="[rules.required]"
+                  hide-details="auto" item-title="name" item-value="id" label="Category" />
               </v-col>
               <v-col cols="12">
                 <v-select v-model="createForm.department" :items="departments" hide-details="auto" item-title="name"
@@ -122,7 +123,7 @@
         <v-divider></v-divider>
         <v-card-text class="mt-5">
           <v-form @submit.prevent="updateItem">
-              <v-row dense="compact">
+            <v-row dense="compact">
               <v-col cols="12">
                 <v-text-field v-model="editForm.name" :rules="[rules.required]" hide-details="auto" label="Item Name"
                   required />
@@ -145,8 +146,8 @@
                 </v-row>
               </v-col>
               <v-col cols="12">
-                <v-select v-model="editForm.category" :items="categories" :rules="[rules.required]" hide-details="auto" item-title="name"
-                  item-value="id" label="Category" />
+                <v-select v-model="editForm.category" :items="categories" :rules="[rules.required]" hide-details="auto"
+                  item-title="name" item-value="id" label="Category" />
               </v-col>
               <v-col cols="12">
                 <v-select v-model="editForm.department" :items="departments" hide-details="auto" item-title="name"
@@ -167,6 +168,9 @@
 </template>
 
 <script setup>
+import { storeToRefs } from "pinia";
+import { useMyAuthStore } from "~/stores/auth";
+const { user } = storeToRefs(useMyAuthStore());
 const baseUrl = useRuntimeConfig().public.strapiBaseURL
 const token = useCookie('token')
 const { triggerToast } = useToast()
@@ -251,11 +255,32 @@ onMounted(async () => {
 
 const getItems = async () => {
   try {
-    const res = await $fetch(`${baseUrl}/api/items?populate=*`, {
-      headers: {
-        Authorization: `Bearer ${token.value}`
-      }
-    })
+    // const res = await $fetch(`${baseUrl}/api/items?populate=*`, {
+    //   headers: {
+    //     Authorization: `Bearer ${token.value}`
+    //   }
+    // })
+    let userDepartment = user.value.department?.name
+
+    if (userDepartment === 'Custodian') {
+      var res = await $fetch(`${baseUrl}/api/items?populate=*`, {
+        headers: {
+          Authorization: `Bearer ${token.value}`
+        }
+      })
+    } else {
+      var res = await $fetch(`${baseUrl}/api/items`, {
+        headers: {
+          Authorization: `Bearer ${token.value}`
+        },
+        params: {
+          'filters[user_department]': user.value.department?.name,
+          'populate': '*'
+        }
+      })
+    }
+
+
 
     if (res) {
       items.value = res.data.sort((a, b) => a.id - b.id)
@@ -303,6 +328,7 @@ const openCreateDialog = async (item) => {
 const createItem = async () => {
   // const isValid = await createItemForm.value.validate();
   const { valid } = await createItemForm.value.validate();
+  console.log("User department: ", user.value.department?.name)
   if (!valid) return
   try {
     await $fetch(`${baseUrl}/api/items`, {
@@ -319,7 +345,8 @@ const createItem = async () => {
           quantity: createForm.value.quantity,
           category: createForm.value.category,
           department: createForm.value.department,
-          supplier: createForm.value.supplier
+          supplier: createForm.value.supplier,
+          user_department: user.value.department?.name
         }
       }
     })

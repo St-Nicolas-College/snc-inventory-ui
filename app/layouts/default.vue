@@ -4,7 +4,8 @@
 
     <v-main>
       <v-container fluid class="pa-6">
-        <slot /> </v-container>
+        <slot />
+      </v-container>
     </v-main>
   </v-app>
 </template>
@@ -17,9 +18,11 @@
 
 <style>
 @import url("https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap");
+
 body {
   font-family: "Inter", sans-serif;
 }
+
 /* Custom active class for the sidebar item to match the image's style */
 /* .v-list-item--active-custom {
   background-color: #4CAF50;
@@ -28,7 +31,7 @@ body {
 } */
 
 .v-list-item--active-custom {
-  color: #4CAF50; 
+  color: #4CAF50;
   border-radius: 8px;
 }
 

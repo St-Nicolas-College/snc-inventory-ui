@@ -152,7 +152,7 @@
               <v-toolbar-title><v-icon start>mdi-tag-outline</v-icon> Acquisition History
               </v-toolbar-title>
               <InventoryAcquisitionForm :item-id="itemId" :total-item-quantity="totalItemQuantity"
-                :total-acquired="totalAcquired" @saved="fetchAcquisitions" />
+                :total-acquired="totalAcquired" @saved="fetchAcquisitionsAndTags" />
             </v-toolbar>
 
             <v-divider></v-divider>
@@ -183,8 +183,10 @@
             <v-toolbar color="transparent">
               <v-toolbar-title><v-icon start>mdi-tag-outline</v-icon> Assigned Tags
               </v-toolbar-title>
-              <InventoryAcquisitionForm :item-id="itemId" :total-item-quantity="totalItemQuantity"
-                :total-acquired="totalAcquired" @saved="fetchAcquisitions" />
+              <!-- <InventoryAcquisitionForm :item-id="itemId" :total-item-quantity="totalItemQuantity"
+                :total-acquired="totalAcquired" @saved="fetchAcquisitions" /> -->
+
+                <v-btn  variant="elevated" color="primary" class="mr-4" size="small" @click="addTagNumberDialog = true"><v-icon start>mdi-plus</v-icon> Add Tag Number</v-btn>
             </v-toolbar>
             <v-divider></v-divider>
             <v-data-table :headers="tagHeaders" :items="tags" density="compact" class="elevation-1">
@@ -221,14 +223,14 @@
     <!-- <v-progress-linear color="blue" model-value="100" height="6" striped /> -->
 
 
-    <v-row>
+    <!-- <v-row>
       <v-col cols="12">
         <v-card class="pa-4">
           <h2 class="mb-2">{{ item?.name }}</h2>
           <p>Total Quantity: {{ item?.quantity }}</p>
           <v-divider class="my-4" />
 
-          <!-- Assign Tag Form -->
+        
           <v-form @submit.prevent="assignTag">
             <v-row>
               <v-col cols="12" md="6">
@@ -243,7 +245,6 @@
           </v-form>
           <v-divider class="my-4" />
 
-          <!-- Assigned Tags Table -->
           <h3>Assigned Tags</h3>
           <v-table density="compact">
             <thead>
@@ -261,7 +262,7 @@
           </v-table>
         </v-card>
       </v-col>
-    </v-row>
+    </v-row> -->
 
 
     <!-- Dialog -->
@@ -281,6 +282,34 @@
           <v-btn text @click="showAcquisitionDialog = false">Cancel</v-btn>
           <v-btn color="primary" @click="saveBorrowerAcquisition">Save</v-btn>
         </v-card-actions>
+      </v-card>
+    </v-dialog>
+
+    <!-- Add Tag Number -->
+     <v-dialog v-model="addTagNumberDialog" max-width="500px">
+      <v-card>
+        <v-card-title class="d-flex align-center">
+          Add Tag Number
+          <v-spacer></v-spacer>
+          <v-btn @click="addTagNumberDialog = false" flat icon><v-icon>mdi-close</v-icon></v-btn>
+        </v-card-title>
+
+        <v-divider></v-divider>
+        <v-card-text>
+          <v-form v-model="formValid" @submit.prevent="assignTag">
+            <v-row>
+              <v-col cols="12" md="12">
+                <v-text-field v-model="newTag" label="Enter Tag Number" :error-messages="errorMessage" clearable />
+              </v-col>
+            </v-row>
+             <v-btn type="submit" color="primary" class="mt-4" variant="elevated" block>
+                  Assign Tag
+                </v-btn>
+          </v-form>
+        </v-card-text>
+      
+         
+   
       </v-card>
     </v-dialog>
   </div>
@@ -303,7 +332,9 @@ const breadcrumbItems = [
   { text: 'Item' },
 ];
 
+const formValid = ref(true)
 const showAcquisitionDialog = ref(false)
+const addTagNumberDialog = ref(false);
 const tab = ref(null)
 const itemId = route.params.id;
 const item = ref(null);
@@ -487,6 +518,11 @@ const fetchAcquisitions = async () => {
     loading.value = false;
   }
 };
+
+const fetchAcquisitionsAndTags = async () => {
+  await fetchAcquisitions();
+  await fetchTags();
+}
 
 // Format the acquisition date
 const formatDate = (dateStr) => {
