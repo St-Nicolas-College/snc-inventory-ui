@@ -68,7 +68,7 @@ useHead({
   title: "Log In",
 });
 const router = useRouter();
-const { authenticateUser, fetchUser } = useMyAuthStore();
+const { authenticateUser, fetchUser, lastLoggedIn } = useMyAuthStore();
 const { authenticated } = storeToRefs(useMyAuthStore());
 const { userInfo } = storeToRefs(useMyAuthStore()); // make userInfo state reactive
 const { errorLogin } = storeToRefs(useMyAuthStore()); // make errorLogin state reactive
@@ -122,7 +122,7 @@ async function handleLogin() {
   if (valid) {
     await authenticateUser(user.value);
     if (authenticated.value == true) {
-
+      lastLoggedIn()
       fetchUser()
       //userData.value = fetchUser()
       loading.value = false;

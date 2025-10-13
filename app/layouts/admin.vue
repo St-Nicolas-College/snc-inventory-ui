@@ -7,20 +7,15 @@
       <v-divider></v-divider>
       <v-list density="compact" nav>
         <v-list-item
-          prepend-icon="mdi-home"
-          title="Home"
-          value="home"
+          prepend-icon="mdi-view-dashboard"
+          title="Dashboard"
+          value="dashboard"
           :to="'/'"
           class="mb-2"
           active-class="v-list-item--active-custom"
         >
         </v-list-item>
 
-        <v-list-item
-          prepend-icon="mdi-store"
-          title="ECommerce"
-          value="ecommerce"
-        ></v-list-item>
         <v-list-item
           prepend-icon="mdi-file-document-outline"
           title="Front Pages"
@@ -29,12 +24,21 @@
         <v-divider class="my-4" v-if="drawer"></v-divider>
         <v-list-item v-else><v-icon>mdi-dots-horizontal</v-icon></v-list-item>
 
-        <v-list-subheader class="text-uppercase mt-4 mb-2" v-if="drawer"
+        <!-- <v-list-subheader class="text-uppercase mt-4 mb-2" v-if="drawer"
           >Apps</v-list-subheader
         >
         <v-list-item v-else>
           <v-icon>mdi-view-grid</v-icon>
-        </v-list-item>
+        </v-list-item> -->
+
+        <v-list-item
+          prepend-icon="mdi-account-circle"
+          title="Users"
+          value="users"
+          to="/admin/users"
+          active-class="v-list-item--active-custom"
+          :active="$route.path.startsWith('/admin/users')"
+        ></v-list-item>
 
         <v-list-item
           prepend-icon="mdi-account-box"
@@ -48,30 +52,22 @@
           </template>
         </v-list-item>
 
-        <!-- <v-list-group value="blog">
+        <v-list-group value="settings">
           <template v-slot:activator="{ props }">
-            <v-list-item v-bind="props" prepend-icon="mdi-post" title="Blog"></v-list-item>
+            <v-list-item v-bind="props" prepend-icon="mdi-post" title="Settings"></v-list-item>
           </template>
           <v-list-item
-            v-for="([title, icon], i) in blogLinks"
+            v-for="([title, link, icon], i) in blogLinks"
             :key="i"
             :value="title"
             :title="title"
+            :link="link"
             :prepend-icon="icon"
-            :to="`/blog/${title.toLowerCase().replace(' ', '-')}`"
+            :to="`/settings/${title.toLowerCase().replace(' ', '-')}`"
           ></v-list-item>
-        </v-list-group> -->
+        </v-list-group>
 
-        <v-list-item
-          prepend-icon="mdi-store"
-          title="E-Commerce"
-          value="app-ecommerce"
-        ></v-list-item>
-        <v-list-item
-          prepend-icon="mdi-chat"
-          title="Chats"
-          value="chats"
-        ></v-list-item>
+       
       </v-list>
 
       <template v-slot:append v-if="drawer">
@@ -116,7 +112,7 @@
     <v-app-bar app flat class="border-b">
       <v-app-bar-nav-icon @click="drawer = !drawer"></v-app-bar-nav-icon>
       <v-toolbar-title class="d-none d-sm-flex align-center">
-        <span class="font-weight-bold mr-2">SNC Inventory System</span>
+        <span class="font-weight-bold mr-2">SNC Inventory System (Admin)</span>
         <!-- <v-chip color="primary" size="small" variant="elevated">New</v-chip> -->
       </v-toolbar-title>
       <v-spacer></v-spacer>
@@ -150,10 +146,11 @@
       <v-menu offset-y>
         <template v-slot:activator="{ props }">
           <v-btn icon v-bind="props" class="ml-2">
-            <v-avatar size="32">
-              <v-img
+            <v-avatar size="40" color="purple">
+              <span>{{ userInitial }}</span>
+              <!-- <v-img
                 src="https://avatars.githubusercontent.com/u/9064066?v=4"
-              ></v-img>
+              ></v-img> -->
             </v-avatar>
           </v-btn>
         </template>
@@ -182,7 +179,7 @@ import { storeToRefs } from "pinia";
 import { useMyAuthStore } from "~/stores/auth";
 import { useTheme } from "vuetify";
 const theme = useTheme();
-theme.global.name.value = "dark";
+theme.global.name.value = "light";
 const { logUserOut } = useMyAuthStore();
 const { authenticated } = storeToRefs(useMyAuthStore());
 const { user } = storeToRefs(useMyAuthStore());
@@ -190,6 +187,10 @@ const userInitial = ref(
   user.value.first_name.substring(0, 1) + user.value.last_name.substring(0, 1)
 );
 
+const blogLinks = [
+  ["Posts", "post", "mdi-newspaper"],
+  ["Details Page", "detail", "mdi-text-box-outline"],
+];
 const drawer = ref(true); // Initialize as true so it's open by default
 
 const handleLogout = () => {
@@ -209,5 +210,10 @@ function toggleTheme() {
 @import url("https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap");
 body {
   font-family: "Inter", sans-serif;
+}
+
+.v-list-item--active-custom {
+  color: #4caf50;
+  border-radius: 8px;
 }
 </style>

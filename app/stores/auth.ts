@@ -10,6 +10,7 @@ export const useMyAuthStore = defineStore("myAuthStore", {
     authenticated: false,
     loading: false,
     userInfo: {},
+    userId: null,
     errorLogin: false,
     errorMessage: "",
     user: null as null | { username: string; account_type: string },
@@ -18,7 +19,7 @@ export const useMyAuthStore = defineStore("myAuthStore", {
   getters: {
     role: (state) => state.user?.account_type || "guest",
     isAdmin: (state) => state.user?.account_type === "admin",
-    isCustodian: (state) => state.user?.account_type === 'custodian',
+    isCustodian: (state) => state.user?.account_type === "custodian",
     isStaff: (state) => state.user?.account_type === "staff",
     isAuthenticated: (state) => state.authenticated,
   },
@@ -40,13 +41,20 @@ export const useMyAuthStore = defineStore("myAuthStore", {
       //this.loading = pending
       if (data.value) {
         let userRole = data?.value.user.account_type;
-        if (userRole !== "admin" && userRole !== "staff" && userRole !== 'custodian') {
+        if (
+          userRole !== "admin" &&
+          userRole !== "staff" &&
+          userRole !== "custodian"
+        ) {
           this.errorLogin = true;
           return error;
         }
 
-        await this.fetchUser();
-        //console.log("User Fetched")
+        this.userId = data.value?.user?.id;
+        // console.log("User Fetched", data.value?.user?.id)
+       
+        //await this.fetchUser();
+        //await this.lastLoggedIn();
         //localStorage.setItem("user-info", JSON.stringify(data.value));
         const token = useCookie("token");
         token.value = data?.value?.jwt;
@@ -81,6 +89,29 @@ export const useMyAuthStore = defineStore("myAuthStore", {
     //   }
     // },
 
+    async lastLoggedIn() {
+      const baseUrl = useRuntimeConfig().public.strapiBaseURL;
+      const token = useCookie("token");
+   
+      try {
+        const res = await $fetch(`${baseUrl}/api/users/${this.userId}`, {
+          method: 'PUT',
+          headers: {
+            Authorization: `Bearer ${token.value}`,
+          }, 
+          body: {
+            lastLogin: Date.now()
+          }
+        })
+
+        if (res) {
+          console.log("Logged successfully!")
+        }
+      } catch (err) {
+        console.log(err)
+      }
+    },
+
     async fetchUser() {
       const baseUrl = useRuntimeConfig().public.strapiBaseURL;
       const token = useCookie("token");
@@ -97,11 +128,14 @@ export const useMyAuthStore = defineStore("myAuthStore", {
       }
 
       try {
-        const { data, error } = await useFetch(`${baseUrl}/api/users/me?populate=*`, {
-          headers: {
-            Authorization: `Bearer ${token.value}`,
-          },
-        });
+        const { data, error } = await useFetch(
+          `${baseUrl}/api/users/me?populate=*`,
+          {
+            headers: {
+              Authorization: `Bearer ${token.value}`,
+            },
+          }
+        );
 
         if (error.value || !data.value) {
           this.user = null;
