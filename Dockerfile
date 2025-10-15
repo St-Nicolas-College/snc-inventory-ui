@@ -4,18 +4,16 @@
 FROM node:20-alpine
 
 # Create and change to the app directory.
-RUN mkdir -p /usr/src/myapp
 WORKDIR /usr/src/myapp
 
 # update and install dependency
-RUN apk update && apk upgrade
-RUN apk add git
+RUN apk add --no-cache git python3 make g++
 
 # Copy the local source code from the folder to the container
 COPY . .
 
 # Install production dependencies.
-RUN yarn install
+RUN yarn install --frozen-lockfile
 
 # Assign ENV variables
 # Bind the App to any IP
