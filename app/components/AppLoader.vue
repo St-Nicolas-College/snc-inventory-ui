@@ -4,7 +4,7 @@
       <!-- First load: Splash screen -->
       <div v-if="first" class="fixed inset-0 flex flex-col items-center justify-center bg-white z-[9999]">
         <!-- Example: Your logo -->
-        <v-img src="/SNC-logo.png" max-width="140" class="mb-6" contain />
+        <!-- <v-img src="/SNC-logo.png" max-width="140" class="mb-6" contain /> -->
         <v-progress-circular indeterminate color="white" size="64" width="6" />
       </div>
 
