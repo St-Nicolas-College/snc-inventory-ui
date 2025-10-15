@@ -11,7 +11,7 @@
         <!-- <v-btn class="my-2 text-capitalize" prepend-icon="mdi-plus" color="primary" to="/inventory/create">Add
           Item</v-btn> -->
         <v-btn class="my-2 text-capitalize" elevation="0" prepend-icon="mdi-plus" color="primary"
-          @click="openCreateDialog">Add
+          @click="createUserDialog = true">Add
           new user</v-btn>
         <v-spacer></v-spacer>
         <v-spacer></v-spacer>
@@ -56,6 +56,15 @@
             </v-chip>
           </div>
         </template>
+        <template v-slot:[`item.lastLogin`]="{ item }">
+          <div v-if="item.lastLogin !== null">
+            {{ formatDate(item.lastLogin) }}
+          </div>
+          <div v-else>
+
+          </div>
+          
+        </template>
         <template v-slot:[`item.status`]="{ item }">
           <div v-if="item.confirmed === true">
             <v-badge location="left center" :offset-x="-15" color="success" dot>
@@ -83,6 +92,29 @@
         </template>
       </v-data-table>
     </v-card>
+
+
+    <!-- Dialog Box -->
+
+    <v-dialog v-model="createUserDialog" width="500" persistent>
+      <v-card>
+       
+        <v-toolbar>
+          <v-toolbar-title><v-icon start>mdi-account-circle</v-icon> Create new user</v-toolbar-title>
+          <v-spacer></v-spacer>
+          <v-btn icon @click="createUserDialog = false"><v-icon>mdi-close</v-icon></v-btn>
+        </v-toolbar>
+        <v-card-text>
+          <v-form>
+            <v-text-field prepend-inner-icon="mdi-account" label="Lastname" variant="solo-filled" flat></v-text-field>
+            <v-text-field prepend-inner-icon="mdi-account" label="Firstname" variant="solo-filled" flat></v-text-field>
+            <v-text-field prepend-inner-icon="mdi-account" label="Middlename" variant="solo-filled" flat></v-text-field>
+            <v-text-field prepend-inner-icon="mdi-domain" label="Department" variant="solo-filled" flat></v-text-field>
+            <v-btn color="primary" block>Create</v-btn>
+          </v-form>
+        </v-card-text>
+      </v-card>
+    </v-dialog>
   </div>
 </template>
 
@@ -108,13 +140,14 @@ const header = [
   { title: 'Department', key: 'department.name', sortable: false },
   { title: 'User Role', key: 'account_type', sortable: false },
   { title: 'Status', key: 'status', sortable: false },
-  { title: 'Last Login', key: 'last_login', sortable: false },
+  { title: 'Last Login', key: 'lastLogin', sortable: false },
 
   { title: 'Actions', key: 'actions', align: 'end', sortable: false },
 ]
 const items = ref([])
 const search = ref('')
 const loading = ref(true)
+const createUserDialog = ref(false)
 
 onMounted(async () => {
   console.log("Token: ", token.value)
@@ -139,6 +172,18 @@ const getUsers = async () => {
     throw err;
   }
 }
+
+// Format the acquisition date
+const formatDate = (dateStr) => {
+  return new Date(dateStr).toLocaleDateString("en-US", {
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: true
+  });
+};
 </script>
 
 <style></style>

@@ -16,11 +16,11 @@
         >
         </v-list-item>
 
-        <v-list-item
+        <!-- <v-list-item
           prepend-icon="mdi-file-document-outline"
           title="Front Pages"
           value="frotnpages"
-        ></v-list-item>
+        ></v-list-item> -->
         <v-divider class="my-4" v-if="drawer"></v-divider>
         <v-list-item v-else><v-icon>mdi-dots-horizontal</v-icon></v-list-item>
 
@@ -40,7 +40,7 @@
           :active="$route.path.startsWith('/admin/users')"
         ></v-list-item>
 
-        <v-list-item
+        <!-- <v-list-item
           prepend-icon="mdi-account-box"
           title="Contact"
           value="contact"
@@ -50,7 +50,7 @@
               >3</v-chip
             >
           </template>
-        </v-list-item>
+        </v-list-item> -->
 
         <v-list-group value="settings">
           <template v-slot:activator="{ props }">
@@ -178,6 +178,10 @@
 import { storeToRefs } from "pinia";
 import { useMyAuthStore } from "~/stores/auth";
 import { useTheme } from "vuetify";
+useHead({
+  title: 'Admin',
+
+})
 const theme = useTheme();
 theme.global.name.value = "light";
 const { logUserOut } = useMyAuthStore();
