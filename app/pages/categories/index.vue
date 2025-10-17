@@ -1,21 +1,44 @@
 <template>
   <div>
     <AppBreadcrumb :breadcrumbs="breadcrumbItems" theme="light" class="mb-3" />
-    <h2 class="mb-4">Categories Page</h2>
+
     <v-card elevation="0">
-      <v-card-title class="d-flex align-center">
+      <v-toolbar color="transparent">
+        <v-toolbar-title><v-icon start>mdi-shape-outline</v-icon> Categories</v-toolbar-title>
+      </v-toolbar>
+      <v-divider></v-divider>
+
+      <!-- <v-card-title class="d-flex align-center">
         <v-spacer></v-spacer>
         <v-btn class="my-2 text-capitalize" prepend-icon="mdi-plus" color="primary" @click="createDialog = true">Add
           Category</v-btn>
       </v-card-title>
+      <v-divider></v-divider> -->
+      <v-card-title class="d-flex align-center">
+        <!-- <v-btn class="my-2 text-capitalize" prepend-icon="mdi-plus" color="primary" to="/inventory/create">Add
+          Item</v-btn> -->
+        <v-btn class="my-2 text-capitalize" prepend-icon="mdi-plus" color="primary" @click="createDialog = true">Add
+          Category</v-btn>
+        <v-spacer></v-spacer>
+        <v-spacer></v-spacer>
+        <v-text-field v-model="search" density="compact" label="Search" prepend-inner-icon="mdi-magnify"
+          variant="solo-filled" flat hide-details single-line></v-text-field>
+      </v-card-title>
       <v-divider></v-divider>
-      <v-data-table density="compact" :headers="header" :items="categories" :loading="loading">
+      <v-data-table density="compact" :headers="header" :items="categories" :search="search" :loading="loading">
         <template v-slot:loading>
           <v-skeleton-loader type="table-row@10"></v-skeleton-loader>
         </template>
+        <template v-slot:[`item.items`]="{ item }">
+          {{ item.items.length }}
+        </template>
+        <template v-slot:[`item.createdAt`]="{ item }">
+          {{ formatDate(item.createdAt) }}
+        </template>
         <template v-slot:[`item.actions`]="{ item }">
           <!-- <v-btn icon color="blue" :to="`/categories/${item.documentId}`"><v-icon>mdi-pencil</v-icon></v-btn> -->
-          <v-btn size="small" class="mr-1" variant="tonal" color="blue" @click="openUpdateDialog(item)"><v-icon start>mdi-pencil</v-icon> Edit</v-btn>
+          <v-btn size="small" class="mr-1" variant="tonal" color="blue" @click="openUpdateDialog(item)"><v-icon
+              start>mdi-pencil</v-icon> Edit</v-btn>
           <v-btn size="small" variant="tonal" color="red" @click="deleteCategory(item.documentId)">
             <v-icon start>mdi-delete</v-icon> Delete
           </v-btn>
@@ -88,7 +111,7 @@ const breadcrumbItems = [
   { text: 'Categories' },
 
 ]
-
+const search = ref('')
 const form = ref({
   name: ''
 })
@@ -106,6 +129,8 @@ const selectedCategoryId = ref(null)
 
 const header = [
   { title: 'Name', key: 'name' },
+  { title: 'Items', key: 'items', align: 'center', sortable: false },
+  { title: 'Created At', key: 'createdAt', align: 'center', sortable: false },
   { title: 'Actions', key: 'actions', align: 'end', sortable: false },
 ]
 
@@ -115,7 +140,7 @@ const rules = {
 
 const getCategories = async () => {
   try {
-    const res = await $fetch(`${baseUrl}/api/categories`, {
+    const res = await $fetch(`${baseUrl}/api/categories?populate=*`, {
       headers: {
         Authorization: `Bearer ${token.value}`
       }
@@ -227,6 +252,15 @@ const deleteCategory = async (id) => {
     console.error('Delete error.', err)
   }
 }
+
+// Format the date created
+const formatDate = (dateStr) => {
+  return new Date(dateStr).toLocaleDateString("en-US", {
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+  });
+};
 
 onMounted(async () => {
   await getCategories()
