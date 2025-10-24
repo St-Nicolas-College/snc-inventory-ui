@@ -39,7 +39,7 @@
           <!-- <v-btn icon color="blue" :to="`/categories/${item.documentId}`"><v-icon>mdi-pencil</v-icon></v-btn> -->
           <v-btn size="small" class="mr-1" variant="tonal" color="blue" @click="openUpdateDialog(item)"><v-icon
               start>mdi-pencil</v-icon> Edit</v-btn>
-          <v-btn size="small" variant="tonal" color="red" @click="deleteCategory(item.documentId)">
+          <v-btn size="small" variant="tonal" color="red" @click="confirmDelete(item)">
             <v-icon start>mdi-delete</v-icon> Delete
           </v-btn>
         </template>
@@ -88,6 +88,42 @@
         </v-card-text>
       </v-card>
     </v-dialog>
+
+    <v-dialog v-model="deleteDialog" max-width="420" transition="dialog-bottom-transition" persistent>
+      <v-card class="rounded-xl elevation-12 overflow-hidden" :class="type">
+        <!-- ✅ Gradient Header -->
+        <div class="dialog-header text-center d-flex align-center pa-2">
+          <v-icon icon="mdi-alert-outline" size="20" class="mr-3 text-white" />
+          <span class="text-white font-weight-medium">
+            Confirm
+          </span>
+        </div>
+
+        <!-- Message -->
+        <v-card-text class="py-5 text-center text-grey-darken-3">
+
+          <v-icon icon="mdi-alert-outline" size="60" color="warning" />
+          <p class="mt-2 text-body-1">Are you sure you want to delete
+            <strong>{{ selectedCategory.name }}</strong>?
+          </p>
+        </v-card-text>
+
+        <!-- Actions (optional manual close) -->
+        <v-card-actions class="pb-5">
+          <v-spacer />
+          <v-btn variant="tonal" rounded="lg" class="px-6 " @click="deleteDialog = false">
+            Cancel
+          </v-btn>
+          <v-btn color="warning" variant="flat" rounded="lg" class="px-6 text-white" :loading="deleting"
+            @click="deleteCategory">
+            Delete
+          </v-btn>
+
+          <v-spacer />
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
+
   </div>
 </template>
 
@@ -95,6 +131,7 @@
 const baseUrl = useRuntimeConfig().public.strapiBaseURL
 const token = useCookie('token')
 const { triggerToast } = useToast()
+const { success, error, warning } = useAlerts()
 
 definePageMeta({
   middleware: 'role-check',
@@ -126,6 +163,11 @@ const createCategoryForm = ref(null)
 const updateDialog = ref(false)
 const updateCategoryForm = ref(null)
 const selectedCategoryId = ref(null)
+const selectedCategory = ref(null)
+
+const deleteDialog = ref(false)
+const deleting = ref(false)
+const deleteError = ref(null)
 
 const header = [
   { title: 'Name', key: 'name' },
@@ -149,13 +191,14 @@ const getCategories = async () => {
     if (res) {
       categories.value = res.data.sort((a, b) => a.id - b.id)
       loading.value = false
-      console.log("Data: ", res.data)
+      //console.log("Data: ", res.data)
     }
 
 
   } catch (err) {
-    console.error("Failed to fetch data: ", err);
-    triggerToast('Failed to fetch data.', 'error');
+    //console.error("Failed to fetch data: ", err);
+    error('Failed to fetch data.')
+    //triggerToast('Failed to fetch data.', 'error');
     throw err;
   }
 
@@ -180,29 +223,38 @@ const submit = async () => {
         }
       })
       getCategories()
+      // triggerToast(`Category ${form.value.name} created successfully`, 'success')
+      success(`Category ${form.value.name} created successfully`)
       loadingBtn.value = false
       createCategoryForm.value?.reset();
-      triggerToast(`Category ${form.value.name} created successfully`, 'success')
+
 
     } catch (err) {
-      console.error('Error creating category: ', err)
-      triggerToast('Failed to create category.', 'error');
-      loadingBtn.value = false
+      if (err.data.error.details.errors[0].path[0] === 'name') {
+        warning('Category name already exist!');
+        loadingBtn.value = false
+      } else {
+        //console.error('Error creating category: ', err)
+        //triggerToast('Failed to create category.', 'error');
+        error('Error creating category.')
+        loadingBtn.value = false
+      }
+
     }
   }
 }
 
 // Load selected category on a dialog box
-const openUpdateDialog = (category) => {
-  selectedCategoryId.value = category.documentId
-  editForm.value.name = category.name
+const openUpdateDialog = (item) => {
+  selectedCategory.value = item
+  editForm.value.name = item.name
   updateDialog.value = true
 }
 
 // Update category
 const updateCategory = async () => {
   try {
-    await $fetch(`${baseUrl}/api/categories/${selectedCategoryId.value}`, {
+    await $fetch(`${baseUrl}/api/categories/${selectedCategory.value.documentId}`, {
       method: 'PUT',
       headers: {
         Authorization: `Bearer ${token.value}`
@@ -213,19 +265,28 @@ const updateCategory = async () => {
         }
       }
     })
-    triggerToast('Category updated.', 'success')
+    //triggerToast('Category updated.', 'success')
+    success('Category successfully updated.')
     updateDialog.value = false;
     getCategories();
   } catch (err) {
-    triggerToast('Update failed.', 'error')
+    //triggerToast('Update failed.', 'error')
+    error('Update failed')
   }
+}
+
+// Open Delete Confirmation Dialog
+const confirmDelete = (item) => {
+  selectedCategory.value = item;
+  deleteDialog.value = true;
+  deleteError.value = null;
 }
 
 // Delete Category Function
 const deleteCategory = async (id) => {
   try {
     // Check if the category exist first
-    const check = await $fetch(`${baseUrl}/api/categories/${id}`, {
+    const check = await $fetch(`${baseUrl}/api/categories/${selectedCategory.value.documentId}`, {
       headers: {
         Authorization: `Bearer ${token.value}`
       },
@@ -233,23 +294,31 @@ const deleteCategory = async (id) => {
     })
 
     if (!check?.data) {
-      triggerToast('Category not found.', 'error')
+      //triggerToast('Category not found.', 'error')
+      error('Category not found.')
+      deleting.value = false
       return
     }
 
     // Delete if it exist
-    await $fetch(`${baseUrl}/api/categories/${id}`, {
+    await $fetch(`${baseUrl}/api/categories/${selectedCategory.value.documentId}`, {
       method: 'DELETE',
       headers: {
         Authorization: `Bearer ${token.value}`
       }
     })
 
-    triggerToast('Category deleted.', 'success')
+    deleteDialog.value = false;
+    //triggerToast('Category deleted.', 'success')
+    success('Category successfully deleted.')
     getCategories()
   } catch (err) {
-    triggerToast('Delete failed.', 'error')
-    console.error('Delete error.', err)
+    //triggerToast('Delete failed.', 'error')
+    error('Unable to delete category')
+    deleting.value = false
+    //console.error('Delete error.', err)
+  } finally {
+    deleting.value = false
   }
 }
 
@@ -288,4 +357,31 @@ onMounted(async () => {
 :deep() .v-table .v-table__wrapper>table>tbody>tr:hover {
   background-color: #f2f2f2;
 }
+
+.dialog-header {
+  /* background: linear-gradient(90deg, #6366f1, #8b5cf6); Default info gradient */
+  /* background: linear-gradient(90deg, #16a34a, #22c55e); success */
+  background: linear-gradient(90deg, #f59e0b, #fbbf24);
+}
+
+
+/* .dialog-header {
+  background: linear-gradient(90deg, #6366f1, #8b5cf6); 
+}
+
+.success .dialog-header {
+  background: linear-gradient(90deg, #16a34a, #22c55e);
+}
+
+.error .dialog-header {
+  background: linear-gradient(90deg, #dc2626, #ef4444);
+}
+
+.warning .dialog-header {
+  background: linear-gradient(90deg, #f59e0b, #fbbf24);
+}
+
+.info .dialog-header {
+  background: linear-gradient(90deg, #3b82f6, #6366f1);
+} */
 </style>
