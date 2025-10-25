@@ -7,7 +7,7 @@
 <script setup>
 definePageMeta({
   layout: "admin",
-  requiredRole: 'admin'
+  requiredRole: 'admin',
 });
 
 </script>

@@ -52,7 +52,7 @@
           </template>
         </v-list-item> -->
 
-        <v-list-group value="settings">
+        <!-- <v-list-group value="settings">
           <template v-slot:activator="{ props }">
             <v-list-item v-bind="props" prepend-icon="mdi-post" title="Settings"></v-list-item>
           </template>
@@ -65,7 +65,7 @@
             :prepend-icon="icon"
             :to="`/settings/${title.toLowerCase().replace(' ', '-')}`"
           ></v-list-item>
-        </v-list-group>
+        </v-list-group> -->
 
        
       </v-list>

@@ -9,7 +9,7 @@ export default defineNuxtRouteMiddleware(async (to, from) => {
     await userStore.fetchUser();
   }
   //@ts-ignore
-  console.log("User data: ", userStore.user?.account_type);
+  //console.log("User data: ", userStore.user?.account_type);
 
   if (!userStore.user && to.path !== "/auth/login") {
     return navigateTo("/auth/login");
@@ -17,6 +17,11 @@ export default defineNuxtRouteMiddleware(async (to, from) => {
 
   if (userStore.user && to.path === "/auth/login") {
     return navigateTo("/");
+  }
+
+  // Redirect to admin page if path is not equal to "/admin"
+  if (userStore.user?.account_type === 'admin' && !to.path.startsWith("/admin")) {
+    return navigateTo("/admin")
   }
 
   // Redirect to login if not authenticated
@@ -32,6 +37,8 @@ export default defineNuxtRouteMiddleware(async (to, from) => {
   const requiredRole = to.meta.requiredRole;
   // @ts-ignore
   const actualRole = userStore.user?.account_type;
+
+  //console.log('Required Role: ', requiredRole)
 
   // if (requiredRole && actualRole !== requiredRole) {
   //   if (actualRole === "admin") return navigateTo("/admin");

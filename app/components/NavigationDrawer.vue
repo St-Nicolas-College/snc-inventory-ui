@@ -142,6 +142,9 @@
                 <v-icon>mdi-power</v-icon>
               </v-btn>
             </v-col>
+            <!-- <v-col class="d-flex align-center justify-center">
+             <small>Version {{ version }}</small>
+            </v-col> -->
           </v-row>
         </v-card>
       </template>
@@ -242,6 +245,11 @@ const userStore = useMyAuthStore();
 const userInitial = ref(
   user.value.first_name.substring(0, 1) + user.value.last_name.substring(0, 1)
 );
+
+//Major: Breaking changes
+//Minor: New Features, backward compatible
+//Patch: Bug fixes only
+const version = ref("1.11.1") //Major.Minor.Patch
 
 //const drawer = ref(true); // Initialize as true so it's open by default
 const drawer = useState('drawer', () => true)

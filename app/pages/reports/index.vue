@@ -1,5 +1,5 @@
 <template>
-  <v-container fluid class="pa-6 bg-grey-lighten-4">
+
     <v-row>
       <!-- Header -->
 
@@ -78,7 +78,7 @@
         </v-card>
       </v-col>
     </v-row>
-  </v-container>
+
 </template>
 
 <script setup>
